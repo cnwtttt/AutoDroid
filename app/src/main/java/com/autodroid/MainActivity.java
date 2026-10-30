@@ -25,7 +25,12 @@ public class MainActivity extends Activity {
     private TextView soundLabel;
     private static final String[] CHANNELS = {"闹钟", "媒体", "铃声", "通知"};
     @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
-    @Override public void onResume() { super.onResume(); render(); }
+    @Override public void onResume() {
+        super.onResume(); render();
+        Store.log(this, "APP_RESUME version=0.2.2 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+            + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
+            + " overlayPermission=" + Settings.canDrawOverlays(this));
+    }
     private LinearLayout column() { LinearLayout l = new LinearLayout(this); l.setOrientation(1); l.setPadding(24,16,24,16); return l; }
     private TextView text(LinearLayout parent, String value, int size) {
         TextView t = new TextView(this); t.setText(value); t.setTextSize(size); t.setTextColor(0xFF18263A); t.setPadding(0,10,0,10); parent.addView(t); return t;
@@ -45,11 +50,12 @@ public class MainActivity extends Activity {
         text(root, enabled ? "● 已请求开启监听" : "○ 监听已关闭", 20);
         button(root, enabled ? "关闭监听并停止声音" : "开启后台短信监听", () -> {
             if (!enabled && !granted(Manifest.permission.RECEIVE_SMS)) { requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS}, 1); return; }
+            Store.log(this, "MONITOR_REQUEST enabled=" + !enabled);
             if (enabled) startService(new Intent(this, MacroService.class).setAction("STOP"));
             else {
                 Store.prefs(this).edit().putBoolean("monitor", true).commit();
                 try { startForegroundService(new Intent(this, MacroService.class)); }
-                catch (RuntimeException e) { Store.prefs(this).edit().putBoolean("monitor", false).commit(); toast(e.getMessage()); }
+                catch (RuntimeException e) { Store.prefs(this).edit().putBoolean("monitor", false).commit(); Store.log(this,"MONITOR_START_FAILED " + e.getMessage()); toast(e.getMessage()); }
             }
             render();
         });

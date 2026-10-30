@@ -14,6 +14,7 @@ final class Store {
     }
     static void save(Context c, JSONArray rules) { prefs(c).edit().putString("rules", rules.toString()).commit(); }
     static synchronized void log(Context c, String message) {
+        android.util.Log.i("AutoDroid", message);
         String old = prefs(c).getString("logs", "");
         String line = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.CHINA).format(new Date()) + "  " + message + "\n";
         prefs(c).edit().putString("logs", (line + old).substring(0, Math.min(16000, line.length() + old.length()))).apply();

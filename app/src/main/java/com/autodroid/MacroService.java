@@ -22,6 +22,7 @@ public class MacroService extends Service {
     static final int[] STREAMS = {AudioManager.STREAM_ALARM, AudioManager.STREAM_MUSIC, AudioManager.STREAM_RING, AudioManager.STREAM_NOTIFICATION};
     @Override public void onCreate() {
         super.onCreate();
+        Store.log(this, "SERVICE_CREATE");
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel("monitor", "后台监听", NotificationManager.IMPORTANCE_LOW));
         nm.createNotificationChannel(new NotificationChannel("alerts", "宏警告", NotificationManager.IMPORTANCE_HIGH));
@@ -41,9 +42,11 @@ public class MacroService extends Service {
         if (Build.VERSION.SDK_INT >= 34) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE | (playing ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK : 0));
         else startForeground(1, n);
         foreground = true;
+        Store.log(this, "SERVICE_FOREGROUND playing=" + playing);
     }
     @Override public int onStartCommand(Intent intent, int flags, int id) {
         String action = intent == null ? "" : intent.getAction();
+        Store.log(this, "SERVICE_COMMAND action=" + action + " monitor=" + Store.prefs(this).getBoolean("monitor",false));
         if ("STOP".equals(action)) {
             Store.prefs(this).edit().putBoolean("monitor", false).commit();
             stopAlert(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY;
@@ -122,6 +125,6 @@ public class MacroService extends Service {
         if (Store.prefs(this).getBoolean("monitor", false)) { if (foreground) promote(false); }
         else { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
     }
-    @Override public void onDestroy() { stopAlertResources(); foreground = false; super.onDestroy(); }
+    @Override public void onDestroy() { Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

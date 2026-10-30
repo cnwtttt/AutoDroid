@@ -1,4 +1,4 @@
-# AutoDroid 0.2.1
+# AutoDroid 0.2.2
 
 普通手机短信警告自动化应用，Android 8.0（API 26）以上，无需 root。
 
@@ -85,3 +85,20 @@ AGP 8.12.0 需要 Gradle 8.13，可执行 `gradle :app:assembleDebug`，首次�
 新日志能区分号码不匹配、关键词不命中和没有启用宏。
 若监听已开启但日志中没有“收到短信”，需检查短信权限、系统广播限制及后台运行状态。
 目前只完成离线编译与匹配检查，尚未在用户手机复现或验证。
+
+## 0.2.2 logcat 诊断
+
+业务日志同步到 logcat，统一标签 `AutoDroid`，应用内日志仍保留。
+覆盖安装后打开应用，开启监听，执行以下命令后再发送真实短信：
+
+```sh
+adb logcat -v time -s AutoDroid:V AndroidRuntime:E
+```
+
+打开应用会输出 `APP_RESUME version=0.2.2`，可确认安装版本及短信权限。
+启用监听应看到 `MONITOR_REQUEST`、`SERVICE_COMMAND` 和 `SERVICE_FOREGROUND`。
+短信入口第一步打印 `SMS_RECEIVER_ENTER`，即使监听关闭也会打印。
+后续 `SMS_PARSED`、`SMS_RULE_MATCH` 及匹配汇总区分解析、匹配和服务启动问题。
+短信正文不输出，发送号码仅保留末四位；运行异常输出堆栈。
+如果应用启动日志存在，但真实短信到达时没有入口日志，说明尚未观察到短信广播送达，
+需要进一步检查系统权限、短信类型和系统广播分发，不能归因于号码匹配。
