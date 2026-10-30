@@ -3,6 +3,7 @@ package com.autodroid;
 import android.content.*;
 import org.json.*;
 import java.text.SimpleDateFormat;
+import java.text.Normalizer;
 import java.util.*;
 
 final class Store {
@@ -39,9 +40,27 @@ final class Store {
             && body.contains(rule.optString("keyword"));
     }
     static String normalize(String number) {
-        String n = number.replaceAll("[\\s()\\-]", "");
+        if (number == null) return "";
+        String compatible = Normalizer.normalize(number, Normalizer.Form.NFKC);
+        StringBuilder cleaned = new StringBuilder();
+        for (int i = 0; i < compatible.length();) {
+            int code = compatible.codePointAt(i);
+            i += Character.charCount(code);
+            if (Character.isWhitespace(code) || Character.isSpaceChar(code)
+                    || Character.getType(code) == Character.FORMAT
+                    || Character.getType(code) == Character.DASH_PUNCTUATION
+                    || code == '(' || code == ')') continue;
+            int digit = Character.digit(code, 10);
+            if (digit >= 0) cleaned.append((char) ('0' + digit));
+            else cleaned.appendCodePoint(code);
+        }
+        String n = cleaned.toString();
         if (n.startsWith("0086")) n = n.substring(4);
         else if (n.startsWith("+86")) n = n.substring(3);
         return n;
+    }
+    static String maskedSender(String sender) {
+        String n = normalize(sender);
+        return n.isEmpty() ? "空号码" : "***" + n.substring(Math.max(0, n.length() - 4));
     }
 }

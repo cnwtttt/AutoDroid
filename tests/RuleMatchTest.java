@@ -49,6 +49,17 @@ public class RuleMatchTest {
         check(Store.matches(saved,"13900139000","正文"), "array survives JSON persistence");
         check(Store.parseNumbers(Store.numberText(saved)).equals(Store.numbers(saved)), "editor round trip");
         check(Store.numbers(new JSONObject().put("numbers",new JSONArray().put("13800138000").put("+8613800138000"))).size() == 1, "contact duplicates normalized");
+        JSONObject prefixRule = new JSONObject().put("numbers", new JSONArray().put("13800138000"));
+        check(Store.matches(prefixRule, "+8613800138000", "短信"), "ASCII +86 sender");
+        check(Store.matches(prefixRule, "\u200e+8613800138000", "短信"), "bidi mark before +86");
+        check(Store.matches(prefixRule, "+86\u00a0138\u202f0013\u00a08000", "短信"), "non-breaking spaces after +86");
+        check(Store.matches(prefixRule, "＋８６１３８００１３８０００", "短信"), "fullwidth +86 sender");
+        check(Store.matches(prefixRule, "+86 138–0013–8000", "短信"), "Unicode phone dashes");
+        check(Store.matches(new JSONObject().put("numbers",new JSONArray().put("\u200e＋８６ 138\u00a00013 8000")),
+            "+8613800138000", "短信"), "contact normalization uses same path");
+        check(!Store.matches(prefixRule, "+8513800138000", "短信"), "different country prefix stays distinct");
+        check(!Store.matches(prefixRule, "+8613800138001", "短信"), "different subscriber stays distinct");
+        check(Store.normalize(null).isEmpty(), "null sender is safe");
         System.out.println("PASS: " + checks + " SMS matching checks");
     }
 }
