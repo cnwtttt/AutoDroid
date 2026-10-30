@@ -86,6 +86,24 @@ public class RuleMatchTest {
         for (int i = 0; i < 140; i++) Store.rememberEvent(restored,"event-"+i);
         check(restored.length() == 128, "bounded dedup history");
         check(Store.digest("sender:body:time").length() == 64, "dedup stores digest only");
+        JSONObject combined = new JSONObject().put("source","both").put("numbers",new JSONArray().put("13800138000"))
+            .put("senderNames","张三").put("keyword","报警");
+        check(Store.matches(combined,"+8613800138000","报警"), "combined accepts SMS alone");
+        check(Store.notificationMatches(combined,Arrays.asList("张三"),"报警"), "combined accepts notification alone");
+        check(!Store.matches(combined,"13800138000","正常"), "combined SMS keyword still required");
+        check(!Store.notificationMatches(combined,Arrays.asList("李四"),"报警"), "combined notification sender still required");
+        combined.put("enabled",false);
+        check(!Store.matches(combined,"13800138000","报警") && !Store.notificationMatches(combined,Arrays.asList("张三"),"报警"), "combined disabled both paths");
+        JSONArray pairs = new JSONArray();
+        check(Store.allowCombinedEvent(pairs,"rule","text","sms",1000), "first SMS executes immediately");
+        check(!Store.allowCombinedEvent(pairs,"rule","text","notification",1100), "notification after SMS suppressed");
+        check(Store.allowCombinedEvent(pairs,"rule","text","notification",1200), "next same source event accepted");
+        check(!Store.allowCombinedEvent(pairs,"rule","text","sms",1300), "SMS after notification suppressed");
+        check(Store.allowCombinedEvent(pairs,"rule","new text","sms",1400), "different content accepted");
+        check(Store.allowCombinedEvent(pairs,"other rule","text","sms",1400), "different macro accepted");
+        check(Store.allowCombinedEvent(pairs,"rule","new text","sms",1500), "same source repeated SMS accepted");
+        check(Store.allowCombinedEvent(pairs,"rule","text","notification",20000), "window expired accepted");
+        check(Store.allowCombinedEvent(new JSONArray(pairs.toString()),"rule","text","sms",500), "clock rollback expires history");
         System.out.println("PASS: " + checks + " message matching checks");
     }
 }

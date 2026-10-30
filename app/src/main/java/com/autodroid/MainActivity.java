@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.0 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.1 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this)
             + " notificationAccess=" + notificationAccess());
@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
             LinearLayout card = column(); card.setBackgroundColor(0xFFFFFFFF); root.addView(card);
             Switch toggle = new Switch(this); toggle.setText(r.optString("name")); toggle.setChecked(r.optBoolean("enabled", true)); card.addView(toggle);
             toggle.setOnCheckedChangeListener((v, checked) -> { try { r.put("enabled", checked); Store.save(this, rules); } catch (JSONException e) { toast(e.getMessage()); } });
-            text(card, "来源：" + ("notification".equals(r.optString("source")) ? "小米短信应用通知（含 RCS）" : "普通 SMS 广播") + "\n通知姓名：" + r.optString("senderNames","未配置") + "\n号码：" + String.join("、", Store.numbers(r)) + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
+            text(card, "来源：" + ("both".equals(r.optString("source")) ? "普通短信或应用通知（任一满足）" : "notification".equals(r.optString("source")) ? "小米短信应用通知（含 RCS）" : "普通 SMS 广播") + "\n通知姓名：" + r.optString("senderNames","未配置") + "\n号码：" + String.join("、", Store.numbers(r)) + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
                 + "\n" + CHANNELS[Math.max(0,Math.min(3,r.optInt("channel")))] + "音量 " + r.optInt("volume") + "% · " + r.optInt("duration") + " 秒", 15);
             button(card, "手动测试（跳过短信条件，直接执行）", () -> {
                 new AlertDialog.Builder(this).setTitle("执行真实动作")
@@ -118,9 +118,9 @@ public class MainActivity extends Activity {
         EditText name = field(form,"宏名称",old.optString("name","短信警告"),InputType.TYPE_CLASS_TEXT);
         text(form,"触发来源",15);
         Spinner source = new Spinner(this);
-        source.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"普通短信 SMS 广播", "小米短信应用通知（SMS / RCS / 网络消息）"}));
-        source.setSelection("notification".equals(old.optString("source")) ? 1 : 0); form.addView(source);
-        text(form,"通知模式仅监听 com.android.mms。通知需显示发送人及消息内容；与普通 SMS 模式分开配置，避免同一条消息双重触发。",14);
+        source.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"普通短信 SMS 广播", "小米短信应用通知（SMS / RCS / 网络消息）", "普通短信或应用通知（任一满足）"}));
+        source.setSelection(index < 0 || "both".equals(old.optString("source")) ? 2 : "notification".equals(old.optString("source")) ? 1 : 0); form.addView(source);
+        text(form,"通知模式仅监听 com.android.mms。通知需显示发送人及消息内容；可选择双来源任一满足即触发；双来源模式对10秒内相同内容进行跨来源配对去重。",14);
         EditText senderNames = field(form,"通知显示的联系人姓名（精确匹配，多个用换行分隔；通知只显示姓名时必填）",old.optString("senderNames"),InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         contactNameTarget = senderNames;
         EditText number = field(form,"发送号码（多个号码用换行、逗号或分号分隔，任意一个匹配）",Store.numberText(old),InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -155,7 +155,7 @@ public class MainActivity extends Activity {
             int seconds; try { seconds = Integer.parseInt(duration.getText().toString()); } catch (NumberFormatException e) { seconds = 0; }
             if (seconds < 5 || seconds > 600) { toast("播放时长应为 5～600 秒"); return; }
             try {
-                JSONObject r = new JSONObject().put("source",notification ? "notification" : "sms").put("senderNames",String.join("\n",Store.parseNames(senderNames.getText().toString()))).put("name",name.getText().toString().trim()).put("numbers",new JSONArray(numbers)).put("keyword",keyword.getText().toString())
+                JSONObject r = new JSONObject().put("source",source.getSelectedItemPosition() == 2 ? "both" : notification ? "notification" : "sms").put("senderNames",String.join("\n",Store.parseNames(senderNames.getText().toString()))).put("name",name.getText().toString().trim()).put("numbers",new JSONArray(numbers)).put("keyword",keyword.getText().toString())
                     .put("channel",channel.getSelectedItemPosition()).put("volume",volume.getProgress()).put("duration",seconds)
                     .put("message",message.getText().toString()).put("sound",selectedSound).put("enabled",old.optBoolean("enabled",true));
                 if (index < 0) rules.put(r); else rules.put(index,r);

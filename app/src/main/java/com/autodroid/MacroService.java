@@ -56,7 +56,12 @@ public class MacroService extends Service {
         if ("SILENCE".equals(action)) { stopAlert(); return START_STICKY; }
         promote(player != null);
         if ("RUN".equals(action)) {
-            try { run(new JSONObject(intent.getStringExtra("rule")), intent.getStringExtra("source")); }
+            try {
+                JSONObject rule = new JSONObject(intent.getStringExtra("rule"));
+                if (Store.allowCombinedRun(this,rule,intent.getStringExtra("eventBodyHash"),intent.getStringExtra("eventChannel"))) {
+                    run(rule,intent.getStringExtra("source"));
+                } else { Store.log(this,"COMBINED_DUPLICATE 同一宏10秒内相同内容的另一来源已执行，跳过本次重复"); }
+            }
             catch (Exception e) { Store.log(this, "执行失败：" + e.getMessage()); stopAlert(); }
         } else if (!Store.prefs(this).getBoolean("monitor", false)) { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
         return Store.prefs(this).getBoolean("monitor", false) ? START_STICKY : START_NOT_STICKY;

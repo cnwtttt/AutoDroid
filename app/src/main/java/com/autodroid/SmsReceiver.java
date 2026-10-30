@@ -42,7 +42,7 @@ public class SmsReceiver extends BroadcastReceiver {
             if (rule != null && Store.matches(rule, sender, body.toString())) {
                 triggered++;
                 Store.log(c, "SMS_RULE_MATCH index=" + i + "，请求启动宏服务");
-                try { c.startForegroundService(new Intent(c, MacroService.class).setAction("RUN").putExtra("rule", rule.toString()).putExtra("source", "短信匹配")); }
+                try { c.startForegroundService(new Intent(c, MacroService.class).setAction("RUN").putExtra("rule", rule.toString()).putExtra("source", "短信匹配").putExtra("eventChannel","sms").putExtra("eventBodyHash",Store.digest(body.toString()))); }
                 catch (RuntimeException e) { Store.log(c, "短信启动失败：" + e.getMessage()); }
             }
         }

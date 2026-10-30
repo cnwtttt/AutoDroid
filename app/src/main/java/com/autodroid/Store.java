@@ -49,7 +49,7 @@ final class Store {
         return result;
     }
     static boolean notificationMatches(JSONObject rule, Collection<String> senders, String body) {
-        if (!"notification".equals(rule.optString("source")) || !rule.optBoolean("enabled", true)
+        if (!("notification".equals(rule.optString("source")) || "both".equals(rule.optString("source"))) || !rule.optBoolean("enabled", true)
                 || !body.contains(rule.optString("keyword"))) return false;
         Set<String> aliases = parseNames(rule.optString("senderNames"));
         Set<String> phones = numbers(rule);
@@ -59,6 +59,34 @@ final class Store {
             if (phones.contains(normalize(sender))) return true;
         }
         return false;
+    }
+    // Pair equal-content events from opposite sources; repeats on the same source remain valid.
+    static boolean allowCombinedEvent(JSONArray history, String ruleHash, String bodyHash, String channel, long now) {
+        try {
+            for (int i = history.length() - 1; i >= 0; i--) {
+                JSONObject event = history.optJSONObject(i);
+                if (event == null || now - event.optLong("time") > 10000 || now < event.optLong("time")) history.remove(i);
+            }
+            for (int i = 0; i < history.length(); i++) {
+                JSONObject event = history.getJSONObject(i);
+                if (!event.optBoolean("paired") && ruleHash.equals(event.optString("rule"))
+                        && bodyHash.equals(event.optString("body")) && !channel.equals(event.optString("channel"))) {
+                    event.put("paired",true); return false;
+                }
+            }
+            while (history.length() >= 128) history.remove(0);
+            history.put(new JSONObject().put("rule",ruleHash).put("body",bodyHash).put("channel",channel).put("time",now));
+            return true;
+        } catch (JSONException e) { throw new IllegalStateException(e); }
+    }
+    static synchronized boolean allowCombinedRun(Context c, JSONObject rule, String bodyHash, String channel) {
+        if (!"both".equals(rule.optString("source")) || bodyHash == null || channel == null) return true;
+        JSONArray history;
+        try { history = new JSONArray(prefs(c).getString("combinedHistory","[]")); }
+        catch (JSONException e) { history = new JSONArray(); }
+        boolean allowed = allowCombinedEvent(history,digest(rule.toString()),bodyHash,channel,System.currentTimeMillis());
+        prefs(c).edit().putString("combinedHistory",history.toString()).commit();
+        return allowed;
     }
     static String digest(String value) {
         try {

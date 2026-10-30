@@ -90,7 +90,7 @@ public class MessageNotificationService extends NotificationListenerService {
         for (JSONObject rule : matched) {
             try {
                 startForegroundService(new Intent(this, MacroService.class).setAction("RUN")
-                    .putExtra("rule", rule.toString()).putExtra("source", "短信应用通知匹配"));
+                    .putExtra("rule", rule.toString()).putExtra("source", "短信应用通知匹配").putExtra("eventChannel","notification").putExtra("eventBodyHash",Store.digest(body)));
                 started = true;
             } catch (RuntimeException e) { Store.log(this, "NOTIFICATION_START_FAILED " + e.getMessage()); }
         }
