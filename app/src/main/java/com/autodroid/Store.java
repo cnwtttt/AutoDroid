@@ -49,16 +49,24 @@ final class Store {
         return result;
     }
     static boolean notificationMatches(JSONObject rule, Collection<String> senders, String body) {
-        if (!("notification".equals(rule.optString("source")) || "both".equals(rule.optString("source"))) || !rule.optBoolean("enabled", true)
-                || !body.contains(rule.optString("keyword"))) return false;
+        return "MATCH".equals(notificationResult(rule,senders,body));
+    }
+    static String notificationResult(JSONObject rule, Collection<String> senders, String body) {
+        if (!rule.optBoolean("enabled",true)) return "DISABLED 宏已禁用";
+        if (!("notification".equals(rule.optString("source")) || "both".equals(rule.optString("source"))))
+            return "SOURCE_MISMATCH 宏仅监听普通短信，请改为双来源或通知来源";
         Set<String> aliases = parseNames(rule.optString("senderNames"));
         Set<String> phones = numbers(rule);
+        boolean senderMatch = false;
         for (String sender : senders) {
             if (sender == null || sender.trim().isEmpty()) continue;
-            if (aliases.contains(Normalizer.normalize(sender, Normalizer.Form.NFKC).trim())) return true;
-            if (phones.contains(normalize(sender))) return true;
+            if (aliases.contains(Normalizer.normalize(sender, Normalizer.Form.NFKC).trim()) || phones.contains(normalize(sender))) senderMatch = true;
         }
-        return false;
+        boolean keywordMatch = body.contains(rule.optString("keyword"));
+        if (!senderMatch && !keywordMatch) return "SENDER_AND_KEYWORD_MISMATCH 发送人和关键词均未匹配";
+        if (!senderMatch) return "SENDER_MISMATCH 发送人未匹配（若通知只显示姓名，请填写通知显示的联系人姓名）";
+        if (!keywordMatch) return "KEYWORD_MISMATCH 发送人已匹配，关键词未命中";
+        return "MATCH";
     }
     // Pair equal-content events from opposite sources; repeats on the same source remain valid.
     static boolean allowCombinedEvent(JSONArray history, String ruleHash, String bodyHash, String channel, long now) {

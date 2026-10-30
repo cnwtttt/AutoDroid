@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.1 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.2 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this)
             + " notificationAccess=" + notificationAccess());
@@ -255,6 +255,11 @@ public class MainActivity extends Activity {
     }
     private void permissions() {
         LinearLayout box = column();
+        Switch diagnostics = new Switch(this);
+        diagnostics.setText("诊断：日志显示发送人姓名/号码（不输出正文）");
+        diagnostics.setChecked(Store.prefs(this).getBoolean("senderDiagnostics",false));
+        diagnostics.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("senderDiagnostics",on).apply());
+        box.addView(diagnostics);
         text(box,"短信仅用于本机匹配，不上传、不读取历史短信。请逐项授权后开启监听。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));

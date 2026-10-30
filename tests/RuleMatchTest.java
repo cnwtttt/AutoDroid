@@ -104,6 +104,15 @@ public class RuleMatchTest {
         check(Store.allowCombinedEvent(pairs,"rule","new text","sms",1500), "same source repeated SMS accepted");
         check(Store.allowCombinedEvent(pairs,"rule","text","notification",20000), "window expired accepted");
         check(Store.allowCombinedEvent(new JSONArray(pairs.toString()),"rule","text","sms",500), "clock rollback expires history");
+        JSONObject diag = new JSONObject().put("source","both").put("numbers",new JSONArray().put("13800138000")).put("keyword","报警");
+        check(Store.notificationResult(diag,Arrays.asList("13800138000"),"报警").equals("MATCH"), "diagnostic match");
+        check(Store.notificationResult(diag,Arrays.asList("张三"),"报警").startsWith("SENDER_MISMATCH"), "diagnostic sender failure");
+        check(Store.notificationResult(diag,Arrays.asList("13800138000"),"正常").startsWith("KEYWORD_MISMATCH"), "diagnostic keyword failure");
+        check(Store.notificationResult(diag,Arrays.asList("张三"),"正常").startsWith("SENDER_AND_KEYWORD_MISMATCH"), "diagnostic both failures");
+        diag.put("source","sms");
+        check(Store.notificationResult(diag,Arrays.asList("13800138000"),"报警").startsWith("SOURCE_MISMATCH"), "diagnostic source failure");
+        diag.put("enabled",false);
+        check(Store.notificationResult(diag,Arrays.asList("13800138000"),"报警").startsWith("DISABLED"), "diagnostic disabled");
         System.out.println("PASS: " + checks + " message matching checks");
     }
 }

@@ -47,9 +47,11 @@ public class MessageNotificationService extends NotificationListenerService {
         LinkedHashSet<String> senders = new LinkedHashSet<>();
         String body;
         long messageTime = n.when > 0 ? n.when : sbn.getPostTime();
+        String extraction;
         List<Notification.MessagingStyle.Message> messages = Collections.emptyList();
         if (Build.VERSION.SDK_INT >= 30) messages = Notification.MessagingStyle.Message.getMessagesFromBundleArray(extras.getParcelableArray(Notification.EXTRA_MESSAGES));
         if (!messages.isEmpty()) {
+            extraction = "MessagingStyle最新消息发送人";
             // Never concatenate past messages: match only the newest message in the notification.
             Notification.MessagingStyle.Message latest = messages.get(messages.size() - 1);
             String sender = value(latest.getSender());
@@ -66,6 +68,7 @@ public class MessageNotificationService extends NotificationListenerService {
             body = value(latest.getText());
             if (latest.getTimestamp() > 0) messageTime = latest.getTimestamp();
         } else {
+            extraction = "通知标题";
             senders.add(value(extras.getCharSequence(Notification.EXTRA_TITLE)));
             body = value(extras.getCharSequence(Notification.EXTRA_BIG_TEXT));
             if (body.isEmpty()) body = value(extras.getCharSequence(Notification.EXTRA_TEXT));
@@ -76,13 +79,22 @@ public class MessageNotificationService extends NotificationListenerService {
         }
         if (body.isEmpty()) { Store.log(this, "NOTIFICATION_SKIP 正文为空或已隐藏"); return; }
         JSONArray rules = Store.rules(this);
+        Store.log(this,"NOTIFICATION_FIELDS senderFrom=" + extraction + " bodyLength=" + body.length() + " rules=" + rules.length());
+        boolean detailed = Store.prefs(this).getBoolean("senderDiagnostics",false);
+        if (detailed) Store.log(this,"NOTIFICATION_SENDERS 实际发送人=" + senders);
         ArrayList<JSONObject> matched = new ArrayList<>();
         for (int i = 0; i < rules.length(); i++) {
             JSONObject rule = rules.optJSONObject(i);
-            if (rule != null && Store.notificationMatches(rule, senders, body)) matched.add(rule);
+            if (rule == null) { Store.log(this,"NOTIFICATION_RULE index=" + i + " INVALID 规则无效"); continue; }
+            String result = Store.notificationResult(rule,senders,body);
+            Store.log(this,"NOTIFICATION_RULE index=" + i + " result=" + result
+                + " configuredNumbers=" + Store.numbers(rule).size() + " configuredNames=" + Store.parseNames(rule.optString("senderNames")).size()
+                + " keywordLength=" + rule.optString("keyword").length());
+            if (detailed) Store.log(this,"NOTIFICATION_CONFIG index=" + i + " 号码=" + Store.numbers(rule) + " 姓名=" + Store.parseNames(rule.optString("senderNames")));
+            if ("MATCH".equals(result)) matched.add(rule);
         }
         Store.log(this, "NOTIFICATION_PARSED senderCandidates=" + senders.size() + " matchedRules=" + matched.size()
-            + "（未匹配时请核对通知标题中的姓名/号码和关键词）");
+            + (matched.isEmpty() ? " 未匹配，具体原因见 NOTIFICATION_RULE" : " 匹配成功，请查看后续宏执行日志"));
         if (matched.isEmpty()) return;
         String event = sbn.getKey() + "\n" + messageTime + "\n" + senders + "\n" + body;
         if (Store.seenNotification(this, event)) { Store.log(this, "NOTIFICATION_SKIP 重复更新"); return; }
