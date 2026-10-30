@@ -1,10 +1,58 @@
+# Gradle, Android Studio and machine-local configuration
 .gradle/
+.idea/
+*.iml
 local.properties
+local.properties.*
+.gradle-local/
+
+# Build outputs and exported binaries (at any directory depth)
 build/
-app/build/
+out/
+.outputs/
+.cxx/
+.externalNativeBuild/
+*.apk
+*.aab
+*.apks
+*.dex
+*.class
+*.apk.idsig
+
+# Signing keys, certificates and signing credentials
 *.jks
 *.keystore
-.idea/
+*.p12
+*.pfx
+*.pem
+*.key
+*.pk8
+signing.properties
+keystore.properties
+key.properties
+signing/
+keystores/
 
-# Device captures may contain personal data.
-autodroid-sms.txt
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.properties
+
+# Device logs, captures and diagnostic exports
+*.log
+logcat*.txt
+autodroid-sms*.txt
+logs/
+captures/
+*.hprof
+*.trace
+*.pcap
+*.pcapng
+
+# Local editor and OS files
+.vscode/
+.DS_Store
+*~
+*.swp
