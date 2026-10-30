@@ -27,7 +27,7 @@ public class MessageNotificationService extends NotificationListenerService {
         if (sbn == null || !"com.android.mms".equals(sbn.getPackageName())) return;
         if (!Store.prefs(this).getBoolean("monitor", false)) return;
         Store.log(this, "NOTIFICATION_RECEIVED package=com.android.mms");
-        try { process(sbn); }
+        try { NotificationDiagnostics.dump(this,sbn); process(sbn); }
         catch (RuntimeException e) {
             android.util.Log.e("AutoDroid", "NOTIFICATION_ERROR", e);
             Store.log(this, "NOTIFICATION_ERROR " + e.getClass().getSimpleName());
@@ -36,6 +36,10 @@ public class MessageNotificationService extends NotificationListenerService {
     private static String value(CharSequence text) { return text == null ? "" : text.toString(); }
     private void process(StatusBarNotification sbn) {
         Notification n = sbn.getNotification();
+        if ((n.flags & Notification.FLAG_FOREGROUND_SERVICE) != 0
+                || "Channel_Foreground_Service".equals(n.getChannelId())) {
+            Store.log(this,"NOTIFICATION_SKIP 前台服务运行提示，不是消息通知 flags=" + n.flags + " channel=" + n.getChannelId()); return;
+        }
         if ((n.flags & (Notification.FLAG_GROUP_SUMMARY | Notification.FLAG_ONGOING_EVENT)) != 0) {
             Store.log(this, "NOTIFICATION_SKIP 汇总或常驻通知"); return;
         }

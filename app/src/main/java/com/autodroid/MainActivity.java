@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.2 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.4 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this)
             + " notificationAccess=" + notificationAccess());
@@ -260,6 +260,12 @@ public class MainActivity extends Activity {
         diagnostics.setChecked(Store.prefs(this).getBoolean("senderDiagnostics",false));
         diagnostics.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("senderDiagnostics",on).apply());
         box.addView(diagnostics);
+        Switch fields = new Switch(this); fields.setText("诊断：通知字段名称与类型（不输出值）");
+        fields.setChecked(Store.prefs(this).getBoolean("notificationFieldDiagnostics",false));
+        fields.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("notificationFieldDiagnostics",on).apply()); box.addView(fields);
+        Switch values = new Switch(this); values.setText("诊断：输出通知字段值（可能含正文/姓名/号码）");
+        values.setChecked(Store.prefs(this).getBoolean("notificationFieldValues",false));
+        values.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("notificationFieldValues",on).apply()); box.addView(values);
         text(box,"短信仅用于本机匹配，不上传、不读取历史短信。请逐项授权后开启监听。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
@@ -267,7 +273,7 @@ public class MainActivity extends Activity {
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
         button(box,(notificationAccess()?"✓ ":"○ ")+"短信应用通知访问（RCS / 网络消息）", () -> new AlertDialog.Builder(this)
             .setTitle("允许读取通知")
-            .setMessage("Android 会授予通知访问能力；AutoDroid 只处理小米短信应用 com.android.mms 的消息通知，在本机匹配发送人及关键词，不上传、不保存正文。授权后还需把宏来源改为短信应用通知。")
+            .setMessage("Android 会授予通知访问能力；AutoDroid 只处理小米短信应用 com.android.mms 的消息通知，在本机匹配发送人及关键词，不上传；默认不保存正文，开启字段值诊断后可能写入日志。授权后还需把宏来源改为短信应用通知。")
             .setPositiveButton("前往授权", (d,w) -> launch(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),20)).setNegativeButton("取消",null).show());
         NotificationManager nm = getSystemService(NotificationManager.class);
         button(box,(nm.isNotificationPolicyAccessGranted()?"✓ ":"○ ")+"勿扰访问（铃声/通知音量受限时）", () -> launch(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS),20));

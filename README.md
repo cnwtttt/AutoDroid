@@ -1,4 +1,4 @@
-# AutoDroid 0.3.2
+# AutoDroid 0.3.4
 
 普通手机短信与小米短信应用通知警告自动化应用，Android 8.0（API 26）以上，无需 root。
 
@@ -148,3 +148,25 @@ adb logcat -v time -s AutoDroid:V AndroidRuntime:E
 默认不输出发送人全名/完整号码或正文。如需核对通知实际发送人，可在“权限与后台设置”
 开启“诊断：日志显示发送人姓名/号码”，此时 `NOTIFICATION_SENDERS` 和 `NOTIFICATION_CONFIG`
 会记录实际发送人与配置值，正文仍不输出。排查完成后关闭该开关，可清空应用日志。
+
+## 0.3.3 过滤运行提示
+
+除常驻/汇总通知外，明确过滤 FLAG_FOREGROUND_SERVICE 或小米 Channel_Foreground_Service
+通道的运行通知（例如“短信正在运行”），日志标明这不是联系人消息。
+此过滤仅减少误判和诊断噪声，不保证系统已向监听器投递真实消息通知。
+测试时退出短信会话并回桌面，再由另一部手机发消息，确认系统生成联系人消息通知。
+
+## 0.3.4 通知字段诊断
+
+在“权限与后台设置”开启“诊断：通知字段名称与类型”，查看 NOTIFICATION_DUMP_BEGIN、
+NOTIFICATION_DUMP_META、NOTIFICATION_FIELD、NOTIFICATION_DUMP_END。
+输出通知ID、通道、标志位、类别、可见性、时间、自定义布局/点击意图是否存在，
+递归检查 extras、publicVersion.extras、消息 Bundle 数组及 Person 姓名/URI。
+诊断在通知过滤前执行，运行提示、汇总通知也能检查；仍仅处理 com.android.mms，且需开启监听。
+
+默认只显示字段名称/类型/长度。若需要具体值，单独开启“输出通知字段值”，
+此选项会同时启用字段诊断，日志可能包含正文、联系人姓名及号码；排查后关闭并清空应用日志。
+字段值也会写入系统logcat；清空应用日志不会清除已经导出的系统日志。
+为限制日志量，每个通知最多80行、递归4层、每个数组或Bundle最多16项、文本最多256字符；
+不执行 PendingIntent、不解码私有对象、不展开字节数组。自定义布局存在不代表能获取其内部文本。
+已通过编译和签名校验；字段诊断效果需在目标手机实际通知上验证。
