@@ -113,6 +113,13 @@ public class RuleMatchTest {
         check(Store.notificationResult(diag,Arrays.asList("13800138000"),"报警").startsWith("SOURCE_MISMATCH"), "diagnostic source failure");
         diag.put("enabled",false);
         check(Store.notificationResult(diag,Arrays.asList("13800138000"),"报警").startsWith("DISABLED"), "diagnostic disabled");
+        JSONObject migrated = new JSONObject().put("source","both").put("numbers",new JSONArray().put("13800138000"));
+        JSONObject noPhone = new JSONObject().put("source","notification").put("senderNames","张三");
+        JSONArray upgrade = new JSONArray().put(migrated).put(noPhone);
+        check(Store.migrateToSms(upgrade), "migrate former notification sources");
+        check(Store.matches(migrated,"13800138000","消息"), "combined macro remains usable as SMS");
+        check(!noPhone.optBoolean("enabled",true), "name-only macro disabled");
+        check(!Store.migrateToSms(upgrade), "SMS migration idempotent");
         System.out.println("PASS: " + checks + " message matching checks");
     }
 }

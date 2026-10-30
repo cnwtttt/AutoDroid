@@ -12,6 +12,7 @@ import org.json.*;
 
 /** Opt-in notification source; the SMS receiver remains separate. */
 public class MessageNotificationService extends NotificationListenerService {
+    private static final boolean SOURCE_ENABLED = false;
     static volatile boolean connected;
     private long connectedAt;
     @Override public void onListenerConnected() {
@@ -23,6 +24,7 @@ public class MessageNotificationService extends NotificationListenerService {
     }
     @Override public void onDestroy() { connected = false; super.onDestroy(); }
     @Override public void onNotificationPosted(StatusBarNotification sbn) {
+        if (!SOURCE_ENABLED) return; // Ignore any callbacks already queued during an upgrade.
         // Inspect only Xiaomi's messaging app; ignore all other apps immediately.
         if (sbn == null || !"com.android.mms".equals(sbn.getPackageName())) return;
         if (!Store.prefs(this).getBoolean("monitor", false)) return;

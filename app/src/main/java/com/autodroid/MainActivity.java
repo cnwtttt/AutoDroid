@@ -21,17 +21,19 @@ import org.json.*;
 public class MainActivity extends Activity {
     private LinearLayout root;
     private EditText contactTarget;
-    private EditText contactNameTarget;
     private String selectedSound = "";
     private TextView soundLabel;
     private static final String[] CHANNELS = {"闹钟", "媒体", "铃声", "通知"};
-    @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
+    @Override public void onCreate(Bundle state) { super.onCreate(state);
+        JSONArray rules = Store.rules(this);
+        if (Store.migrateToSms(rules)) { Store.save(this,rules); Store.log(this,"通知触发已停用，原宏已转换为普通短信；无号码的宏已禁用，请编辑补充号码"); }
+        Store.prefs(this).edit().putBoolean("senderDiagnostics",false).putBoolean("notificationFieldDiagnostics",false).putBoolean("notificationFieldValues",false).apply();
+        render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.4 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.5 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
-            + " overlayPermission=" + Settings.canDrawOverlays(this)
-            + " notificationAccess=" + notificationAccess());
+            + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
         if (Store.prefs(this).getBoolean("monitor",false) && !MacroService.isRunning) {
             try { Store.log(this,"MONITOR_RESTORE 恢复前台服务"); startForegroundService(new Intent(this,MacroService.class)); }
@@ -44,13 +46,6 @@ public class MainActivity extends Activity {
     }
     private void button(LinearLayout parent, String label, Runnable action) {
         Button b = new Button(this); b.setText(label); b.setAllCaps(false); parent.addView(b); b.setOnClickListener(v -> action.run());
-    }
-    private boolean notificationAccess() {
-        ComponentName component = new ComponentName(this,MessageNotificationService.class);
-        if (Build.VERSION.SDK_INT >= 27) return getSystemService(NotificationManager.class).isNotificationListenerAccessGranted(component);
-        String enabled = Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");
-        if (enabled != null) for (String item : enabled.split(":")) if (component.equals(ComponentName.unflattenFromString(item))) return true;
-        return false;
     }
     private boolean needsSms() {
         JSONArray rules = Store.rules(this);
@@ -70,7 +65,6 @@ public class MainActivity extends Activity {
         text(root, "AutoDroid", 32); text(root, "短信到达 → 调节音量 → 播放音源 → 弹出警告", 15);
         boolean enabled = Store.prefs(this).getBoolean("monitor", false);
         text(root, enabled ? "● 已请求开启监听" : "○ 监听已关闭", 20);
-        text(root,"短信应用通知访问：" + (notificationAccess() ? (MessageNotificationService.connected ? "已连接" : "已授权，等待系统连接") : "未授权（RCS/网络消息需要）"),14);
         button(root, enabled ? "关闭监听并停止声音" : "开启后台短信监听", () -> {
             if (!enabled && needsSms() && !granted(Manifest.permission.RECEIVE_SMS)) { requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS}, 1); return; }
             Store.log(this, "MONITOR_REQUEST enabled=" + !enabled);
@@ -92,7 +86,7 @@ public class MainActivity extends Activity {
             LinearLayout card = column(); card.setBackgroundColor(0xFFFFFFFF); root.addView(card);
             Switch toggle = new Switch(this); toggle.setText(r.optString("name")); toggle.setChecked(r.optBoolean("enabled", true)); card.addView(toggle);
             toggle.setOnCheckedChangeListener((v, checked) -> { try { r.put("enabled", checked); Store.save(this, rules); } catch (JSONException e) { toast(e.getMessage()); } });
-            text(card, "来源：" + ("both".equals(r.optString("source")) ? "普通短信或应用通知（任一满足）" : "notification".equals(r.optString("source")) ? "小米短信应用通知（含 RCS）" : "普通 SMS 广播") + "\n通知姓名：" + r.optString("senderNames","未配置") + "\n号码：" + String.join("、", Store.numbers(r)) + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
+            text(card, "号码：" + String.join("、", Store.numbers(r)) + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
                 + "\n" + CHANNELS[Math.max(0,Math.min(3,r.optInt("channel")))] + "音量 " + r.optInt("volume") + "% · " + r.optInt("duration") + " 秒", 15);
             button(card, "手动测试（跳过短信条件，直接执行）", () -> {
                 new AlertDialog.Builder(this).setTitle("执行真实动作")
@@ -116,13 +110,6 @@ public class MainActivity extends Activity {
         JSONArray rules = Store.rules(this); JSONObject old = index < 0 ? new JSONObject() : rules.optJSONObject(index);
         LinearLayout form = column(); ScrollView scroll = new ScrollView(this); scroll.addView(form);
         EditText name = field(form,"宏名称",old.optString("name","短信警告"),InputType.TYPE_CLASS_TEXT);
-        text(form,"触发来源",15);
-        Spinner source = new Spinner(this);
-        source.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"普通短信 SMS 广播", "小米短信应用通知（SMS / RCS / 网络消息）", "普通短信或应用通知（任一满足）"}));
-        source.setSelection(index < 0 || "both".equals(old.optString("source")) ? 2 : "notification".equals(old.optString("source")) ? 1 : 0); form.addView(source);
-        text(form,"通知模式仅监听 com.android.mms。通知需显示发送人及消息内容；可选择双来源任一满足即触发；双来源模式对10秒内相同内容进行跨来源配对去重。",14);
-        EditText senderNames = field(form,"通知显示的联系人姓名（精确匹配，多个用换行分隔；通知只显示姓名时必填）",old.optString("senderNames"),InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        contactNameTarget = senderNames;
         EditText number = field(form,"发送号码（多个号码用换行、逗号或分号分隔，任意一个匹配）",Store.numberText(old),InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         number.setMinLines(2);
         contactTarget = number;
@@ -145,17 +132,16 @@ public class MainActivity extends Activity {
         });
         button(form,"选择本地音频文件", () -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("audio/*").addCategory(Intent.CATEGORY_OPENABLE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION),11));
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle(index < 0 ? "新建短信宏" : "编辑短信宏").setView(scroll).setPositiveButton("保存",null).setNegativeButton("取消",null).create();
-        dialog.setOnDismissListener(d -> { if (contactTarget == number) { contactTarget = null; contactNameTarget = null; } });
+        dialog.setOnDismissListener(d -> { if (contactTarget == number) { contactTarget = null; } });
         dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b -> {
             LinkedHashSet<String> numbers = Store.parseNumbers(number.getText().toString());
-            boolean notification = source.getSelectedItemPosition() == 1;
-            if (name.getText().toString().trim().isEmpty() || (numbers.isEmpty() && (!notification || Store.parseNames(senderNames.getText().toString()).isEmpty()))) {
-                toast("请填写宏名称及发送号码；通知模式也可只填通知显示的联系人姓名"); return;
+            if (name.getText().toString().trim().isEmpty() || numbers.isEmpty()) {
+                toast("请填写宏名称及发送号码"); return;
             }
             int seconds; try { seconds = Integer.parseInt(duration.getText().toString()); } catch (NumberFormatException e) { seconds = 0; }
             if (seconds < 5 || seconds > 600) { toast("播放时长应为 5～600 秒"); return; }
             try {
-                JSONObject r = new JSONObject().put("source",source.getSelectedItemPosition() == 2 ? "both" : notification ? "notification" : "sms").put("senderNames",String.join("\n",Store.parseNames(senderNames.getText().toString()))).put("name",name.getText().toString().trim()).put("numbers",new JSONArray(numbers)).put("keyword",keyword.getText().toString())
+                JSONObject r = new JSONObject().put("source","sms").put("name",name.getText().toString().trim()).put("numbers",new JSONArray(numbers)).put("keyword",keyword.getText().toString())
                     .put("channel",channel.getSelectedItemPosition()).put("volume",volume.getProgress()).put("duration",seconds)
                     .put("message",message.getText().toString()).put("sound",selectedSound).put("enabled",old.optBoolean("enabled",true));
                 if (index < 0) rules.put(r); else rules.put(index,r);
@@ -233,12 +219,7 @@ public class MainActivity extends Activity {
             .setPositiveButton("使用所选号码", (d,w) -> {
                 if (contactTarget != target) return;
                 target.setText(String.join("\n",selected));
-                if (contactNameTarget != null) {
-                    LinkedHashSet<String> aliases = Store.parseNames(contactNameTarget.getText().toString());
-                    aliases.removeAll(names.values());
-                    for (String phone : selected) if (names.containsKey(phone)) aliases.add(names.get(phone));
-                    contactNameTarget.setText(String.join("\n",aliases));
-                }
+
             })
             .setNegativeButton("取消",null).show();
     }
@@ -255,26 +236,11 @@ public class MainActivity extends Activity {
     }
     private void permissions() {
         LinearLayout box = column();
-        Switch diagnostics = new Switch(this);
-        diagnostics.setText("诊断：日志显示发送人姓名/号码（不输出正文）");
-        diagnostics.setChecked(Store.prefs(this).getBoolean("senderDiagnostics",false));
-        diagnostics.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("senderDiagnostics",on).apply());
-        box.addView(diagnostics);
-        Switch fields = new Switch(this); fields.setText("诊断：通知字段名称与类型（不输出值）");
-        fields.setChecked(Store.prefs(this).getBoolean("notificationFieldDiagnostics",false));
-        fields.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("notificationFieldDiagnostics",on).apply()); box.addView(fields);
-        Switch values = new Switch(this); values.setText("诊断：输出通知字段值（可能含正文/姓名/号码）");
-        values.setChecked(Store.prefs(this).getBoolean("notificationFieldValues",false));
-        values.setOnCheckedChangeListener((v,on) -> Store.prefs(this).edit().putBoolean("notificationFieldValues",on).apply()); box.addView(values);
         text(box,"短信仅用于本机匹配，不上传、不读取历史短信。请逐项授权后开启监听。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
         if (Build.VERSION.SDK_INT >= 33) button(box,(granted(Manifest.permission.POST_NOTIFICATIONS)?"✓ ":"○ ")+"通知权限", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},2));
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
-        button(box,(notificationAccess()?"✓ ":"○ ")+"短信应用通知访问（RCS / 网络消息）", () -> new AlertDialog.Builder(this)
-            .setTitle("允许读取通知")
-            .setMessage("Android 会授予通知访问能力；AutoDroid 只处理小米短信应用 com.android.mms 的消息通知，在本机匹配发送人及关键词，不上传；默认不保存正文，开启字段值诊断后可能写入日志。授权后还需把宏来源改为短信应用通知。")
-            .setPositiveButton("前往授权", (d,w) -> launch(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),20)).setNegativeButton("取消",null).show());
         NotificationManager nm = getSystemService(NotificationManager.class);
         button(box,(nm.isNotificationPolicyAccessGranted()?"✓ ":"○ ")+"勿扰访问（铃声/通知音量受限时）", () -> launch(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS),20));
         boolean exempt = getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName());

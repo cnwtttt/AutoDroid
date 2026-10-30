@@ -48,6 +48,19 @@ final class Store {
         }
         return result;
     }
+    static boolean migrateToSms(JSONArray rules) {
+        boolean changed = false;
+        for (int i = 0; i < rules.length(); i++) {
+            JSONObject r = rules.optJSONObject(i);
+            if (r == null || !("notification".equals(r.optString("source")) || "both".equals(r.optString("source")))) continue;
+            try {
+                r.put("source","sms");
+                if (numbers(r).isEmpty()) r.put("enabled",false);
+                changed = true;
+            } catch (JSONException e) { throw new IllegalStateException(e); }
+        }
+        return changed;
+    }
     static boolean notificationMatches(JSONObject rule, Collection<String> senders, String body) {
         return "MATCH".equals(notificationResult(rule,senders,body));
     }
