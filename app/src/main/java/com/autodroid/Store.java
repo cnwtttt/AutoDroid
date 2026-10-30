@@ -17,10 +17,25 @@ final class Store {
         String line = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.CHINA).format(new Date()) + "  " + message + "\n";
         prefs(c).edit().putString("logs", (line + old).substring(0, Math.min(16000, line.length() + old.length()))).apply();
     }
+    static LinkedHashSet<String> parseNumbers(String text) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (String entry : text.split("[,，;；\\n\\r]+")) {
+            String n = normalize(entry);
+            if (!n.isEmpty()) result.add(n);
+        }
+        return result;
+    }
+    static LinkedHashSet<String> numbers(JSONObject rule) {
+        JSONArray saved = rule.optJSONArray("numbers");
+        if (saved == null) return parseNumbers(rule.optString("number"));
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (int i = 0; i < saved.length(); i++) result.addAll(parseNumbers(saved.optString(i)));
+        return result;
+    }
+    static String numberText(JSONObject rule) { return String.join("\n", numbers(rule)); }
     static boolean matches(JSONObject rule, String sender, String body) {
-        String expected = normalize(rule.optString("number"));
         String actual = normalize(sender);
-        return rule.optBoolean("enabled", true) && !expected.isEmpty() && expected.equals(actual)
+        return rule.optBoolean("enabled", true) && !actual.isEmpty() && numbers(rule).contains(actual)
             && body.contains(rule.optString("keyword"));
     }
     static String normalize(String number) {

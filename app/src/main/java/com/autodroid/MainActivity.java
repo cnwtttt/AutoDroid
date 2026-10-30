@@ -8,6 +8,11 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.database.Cursor;
+import android.text.Editable;
+import android.text.TextWatcher;
+import java.util.*;
 import android.text.InputType;
 import android.view.*;
 import android.widget.*;
@@ -15,6 +20,7 @@ import org.json.*;
 
 public class MainActivity extends Activity {
     private LinearLayout root;
+    private EditText contactTarget;
     private String selectedSound = "";
     private TextView soundLabel;
     private static final String[] CHANNELS = {"闹钟", "媒体", "铃声", "通知"};
@@ -57,7 +63,7 @@ public class MainActivity extends Activity {
             LinearLayout card = column(); card.setBackgroundColor(0xFFFFFFFF); root.addView(card);
             Switch toggle = new Switch(this); toggle.setText(r.optString("name")); toggle.setChecked(r.optBoolean("enabled", true)); card.addView(toggle);
             toggle.setOnCheckedChangeListener((v, checked) -> { try { r.put("enabled", checked); Store.save(this, rules); } catch (JSONException e) { toast(e.getMessage()); } });
-            text(card, "号码：" + r.optString("number") + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
+            text(card, "号码：" + String.join("、", Store.numbers(r)) + "\n关键词：" + (r.optString("keyword").isEmpty() ? "不限" : r.optString("keyword"))
                 + "\n" + CHANNELS[Math.max(0,Math.min(3,r.optInt("channel")))] + "音量 " + r.optInt("volume") + "% · " + r.optInt("duration") + " 秒", 15);
             button(card, "手动测试（跳过短信条件，直接执行）", () -> {
                 new AlertDialog.Builder(this).setTitle("执行真实动作")
@@ -81,7 +87,10 @@ public class MainActivity extends Activity {
         JSONArray rules = Store.rules(this); JSONObject old = index < 0 ? new JSONObject() : rules.optJSONObject(index);
         LinearLayout form = column(); ScrollView scroll = new ScrollView(this); scroll.addView(form);
         EditText name = field(form,"宏名称",old.optString("name","短信警告"),InputType.TYPE_CLASS_TEXT);
-        EditText number = field(form,"发送号码（完整号码，支持 +86；可填运营商服务号）",old.optString("number"),InputType.TYPE_CLASS_PHONE);
+        EditText number = field(form,"发送号码（多个号码用换行、逗号或分号分隔，任意一个匹配）",Store.numberText(old),InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        number.setMinLines(2);
+        contactTarget = number;
+        button(form,"从通讯录选择多个联系人/号码", () -> chooseContacts(number));
         EditText keyword = field(form,"短信包含关键词（留空匹配该号码的所有短信）",old.optString("keyword"),InputType.TYPE_CLASS_TEXT);
         text(form,"播放及调节的音频通道",15); Spinner channel = new Spinner(this); channel.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,CHANNELS)); channel.setSelection(Math.max(0,Math.min(3,old.optInt("channel")))); form.addView(channel);
         text(form,"音量百分比",15); SeekBar volume = new SeekBar(this); volume.setMax(100); volume.setProgress(old.optInt("volume",80)); form.addView(volume);
@@ -100,19 +109,85 @@ public class MainActivity extends Activity {
         });
         button(form,"选择本地音频文件", () -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("audio/*").addCategory(Intent.CATEGORY_OPENABLE).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION),11));
         AlertDialog dialog = new AlertDialog.Builder(this).setTitle(index < 0 ? "新建短信宏" : "编辑短信宏").setView(scroll).setPositiveButton("保存",null).setNegativeButton("取消",null).create();
+        dialog.setOnDismissListener(d -> { if (contactTarget == number) contactTarget = null; });
         dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b -> {
-            String n = number.getText().toString().trim();
-            if (n.isEmpty() || name.getText().toString().trim().isEmpty()) { toast("请填写名称和完整发送号码"); return; }
+            LinkedHashSet<String> numbers = Store.parseNumbers(number.getText().toString());
+            if (numbers.isEmpty() || name.getText().toString().trim().isEmpty()) { toast("请填写名称和完整发送号码"); return; }
             int seconds; try { seconds = Integer.parseInt(duration.getText().toString()); } catch (NumberFormatException e) { seconds = 0; }
             if (seconds < 5 || seconds > 600) { toast("播放时长应为 5～600 秒"); return; }
             try {
-                JSONObject r = new JSONObject().put("name",name.getText().toString().trim()).put("number",n).put("keyword",keyword.getText().toString())
+                JSONObject r = new JSONObject().put("name",name.getText().toString().trim()).put("numbers",new JSONArray(numbers)).put("keyword",keyword.getText().toString())
                     .put("channel",channel.getSelectedItemPosition()).put("volume",volume.getProgress()).put("duration",seconds)
                     .put("message",message.getText().toString()).put("sound",selectedSound).put("enabled",old.optBoolean("enabled",true));
                 if (index < 0) rules.put(r); else rules.put(index,r);
                 Store.save(this,rules); dialog.dismiss(); render();
             } catch (JSONException e) { toast(e.getMessage()); }
         })); dialog.show();
+    }
+    private void chooseContacts(EditText target) {
+        if (contactTarget != target) return;
+        if (!granted(Manifest.permission.READ_CONTACTS)) {
+            new AlertDialog.Builder(this).setTitle("读取通讯录")
+                .setMessage("用于显示联系人姓名和电话号码，供你多选。只把选中的号码保存到宏中，不上传通讯录；也可以取消并手动输入号码。")
+                .setPositiveButton("继续授权", (d,w) -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3))
+                .setNegativeButton("取消",null).show();
+            return;
+        }
+        toast("正在读取联系人…");
+        new Thread(() -> {
+            LinkedHashMap<String,String> contacts = new LinkedHashMap<>();
+            try (Cursor cursor = getContentResolver().query(Phone.CONTENT_URI,
+                    new String[]{Phone.DISPLAY_NAME, Phone.NUMBER},null,null,Phone.DISPLAY_NAME + " ASC")) {
+                if (cursor != null) while (cursor.moveToNext()) {
+                    String raw = cursor.getString(1);
+                    if (raw == null) continue;
+                    String n = Store.normalize(raw);
+                    if (!n.isEmpty() && !contacts.containsKey(n)) contacts.put(n, cursor.getString(0) + " · " + raw);
+                }
+            } catch (RuntimeException e) {
+                runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) toast("读取联系人失败，可手动输入号码：" + e.getMessage()); });
+                return;
+            }
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed() || contactTarget != target) return;
+                if (contacts.isEmpty()) { toast("没有可用的联系人号码，请手动输入"); return; }
+                showContacts(target,contacts);
+            });
+        },"contact-reader").start();
+    }
+    private void showContacts(EditText target, LinkedHashMap<String,String> contacts) {
+        LinkedHashSet<String> selected = Store.parseNumbers(target.getText().toString());
+        ArrayList<String> visible = new ArrayList<>();
+        LinearLayout box = column();
+        text(box,"联系人有多个号码时可分别勾选；已有手填号码会保留，可在编辑框删除。",14);
+        EditText search = field(box,"搜索姓名或号码","",InputType.TYPE_CLASS_TEXT);
+        ListView list = new ListView(this); list.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        box.addView(list,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,(int)(320 * getResources().getDisplayMetrics().density)));
+        Runnable refresh = () -> {
+            String query = search.getText().toString().toLowerCase(Locale.ROOT).trim();
+            visible.clear(); ArrayList<String> labels = new ArrayList<>();
+            for (Map.Entry<String,String> entry : contacts.entrySet()) {
+                if (entry.getValue().toLowerCase(Locale.ROOT).contains(query) || entry.getKey().contains(query)) {
+                    visible.add(entry.getKey()); labels.add(entry.getValue());
+                }
+            }
+            list.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_list_item_multiple_choice,labels));
+            list.clearChoices();
+            for (int i = 0; i < visible.size(); i++) list.setItemChecked(i,selected.contains(visible.get(i)));
+        };
+        list.setOnItemClickListener((parent,view,position,id) -> {
+            String n = visible.get(position);
+            if (list.isItemChecked(position)) selected.add(n); else selected.remove(n);
+        });
+        search.addTextChangedListener(new TextWatcher() {
+            public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
+            public void onTextChanged(CharSequence s,int start,int before,int count) { refresh.run(); }
+            public void afterTextChanged(Editable e) {}
+        });
+        refresh.run();
+        new AlertDialog.Builder(this).setTitle("多选联系人号码").setView(box)
+            .setPositiveButton("使用所选号码", (d,w) -> { if (contactTarget == target) target.setText(String.join("\n",selected)); })
+            .setNegativeButton("取消",null).show();
     }
     private void launch(Intent intent,int code) { try { startActivityForResult(intent,code); } catch (RuntimeException e) { toast("系统不支持此页面："+e.getMessage()); } }
     @Override protected void onActivityResult(int request,int result,Intent data) {
@@ -129,6 +204,7 @@ public class MainActivity extends Activity {
         LinearLayout box = column();
         text(box,"短信仅用于本机匹配，不上传、不读取历史短信。请逐项授权后开启监听。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
+        button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
         if (Build.VERSION.SDK_INT >= 33) button(box,(granted(Manifest.permission.POST_NOTIFICATIONS)?"✓ ":"○ ")+"通知权限", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},2));
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
         NotificationManager nm = getSystemService(NotificationManager.class);
@@ -140,6 +216,6 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.addView(box);
         new AlertDialog.Builder(this).setTitle("权限与后台设置（重新打开可刷新状态）").setView(scroll).setPositiveButton("关闭",null).show();
     }
-    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); }
+    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); if (r == 3 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && contactTarget != null) chooseContacts(contactTarget); }
     private void toast(String s) { Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
 }
