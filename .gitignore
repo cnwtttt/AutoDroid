@@ -5,3 +5,6 @@ app/build/
 *.jks
 *.keystore
 .idea/
+
+# Device captures may contain personal data.
+autodroid-sms.txt

@@ -60,6 +60,32 @@ public class RuleMatchTest {
         check(!Store.matches(prefixRule, "+8513800138000", "短信"), "different country prefix stays distinct");
         check(!Store.matches(prefixRule, "+8613800138001", "短信"), "different subscriber stays distinct");
         check(Store.normalize(null).isEmpty(), "null sender is safe");
-        System.out.println("PASS: " + checks + " SMS matching checks");
+        JSONObject notice = new JSONObject().put("source","notification").put("enabled",true)
+            .put("numbers",new JSONArray().put("13800138000")).put("senderNames","张三\n李四").put("keyword","报警");
+        check(Store.notificationMatches(notice,Arrays.asList("张三"),"设备报警"), "notification contact name");
+        check(Store.notificationMatches(notice,Arrays.asList("李四"),"报警"), "notification second contact");
+        check(Store.notificationMatches(notice,Arrays.asList("+8613800138000"),"报警"), "notification number");
+        check(!Store.notificationMatches(notice,Arrays.asList("张三丰"),"报警"), "notification exact name only");
+        check(!Store.notificationMatches(notice,Arrays.asList("王五"),"张三报警"), "body cannot impersonate sender");
+        check(!Store.notificationMatches(notice,Arrays.asList("张三"),"正常"), "notification keyword");
+        check(!Store.notificationMatches(notice,Arrays.asList(""),"报警"), "notification missing sender");
+        check(!Store.matches(notice,"13800138000","报警"), "notification rule ignores SMS to avoid double trigger");
+        check(!Store.notificationMatches(prefixRule,Arrays.asList("13800138000"),"报警"), "legacy SMS rule ignores notifications");
+        notice.put("enabled",false);
+        check(!Store.notificationMatches(notice,Arrays.asList("张三"),"报警"), "disabled notification rule");
+        notice.put("enabled",true).put("numbers",new JSONArray()).put("keyword","");
+        check(Store.notificationMatches(notice,Arrays.asList("张三"),"普通消息"), "name only notification rule");
+        notice.put("senderNames","Ａｌｉｃｅ;李四");
+        check(Store.notificationMatches(notice,Arrays.asList("Alice"),"消息"), "compatible Unicode contact name");
+        JSONArray history = new JSONArray();
+        check(Store.rememberEvent(history,"first"), "new notification event");
+        check(!Store.rememberEvent(history,"first"), "notification update suppressed");
+        JSONArray restored = new JSONArray(history.toString());
+        check(!Store.rememberEvent(restored,"first"), "dedup survives persistence");
+        check(Store.rememberEvent(restored,"second"), "new message on same notification allowed");
+        for (int i = 0; i < 140; i++) Store.rememberEvent(restored,"event-"+i);
+        check(restored.length() == 128, "bounded dedup history");
+        check(Store.digest("sender:body:time").length() == 64, "dedup stores digest only");
+        System.out.println("PASS: " + checks + " message matching checks");
     }
 }

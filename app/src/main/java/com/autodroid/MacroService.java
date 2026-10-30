@@ -19,6 +19,7 @@ public class MacroService extends Service {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable timeout = () -> stopAlert();
     private boolean foreground;
+    static volatile boolean isRunning;
     static final int[] STREAMS = {AudioManager.STREAM_ALARM, AudioManager.STREAM_MUSIC, AudioManager.STREAM_RING, AudioManager.STREAM_NOTIFICATION};
     @Override public void onCreate() {
         super.onCreate();
@@ -42,6 +43,7 @@ public class MacroService extends Service {
         if (Build.VERSION.SDK_INT >= 34) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE | (playing ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK : 0));
         else startForeground(1, n);
         foreground = true;
+        isRunning = true;
         Store.log(this, "SERVICE_FOREGROUND playing=" + playing);
     }
     @Override public int onStartCommand(Intent intent, int flags, int id) {
@@ -52,7 +54,7 @@ public class MacroService extends Service {
             stopAlert(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY;
         }
         if ("SILENCE".equals(action)) { stopAlert(); return START_STICKY; }
-        promote(false);
+        promote(player != null);
         if ("RUN".equals(action)) {
             try { run(new JSONObject(intent.getStringExtra("rule")), intent.getStringExtra("source")); }
             catch (Exception e) { Store.log(this, "执行失败：" + e.getMessage()); stopAlert(); }
@@ -125,6 +127,6 @@ public class MacroService extends Service {
         if (Store.prefs(this).getBoolean("monitor", false)) { if (foreground) promote(false); }
         else { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
     }
-    @Override public void onDestroy() { Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
+    @Override public void onDestroy() { isRunning = false; Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

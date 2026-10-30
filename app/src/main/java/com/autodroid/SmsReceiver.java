@@ -34,6 +34,7 @@ public class SmsReceiver extends BroadcastReceiver {
         int enabled = 0, senderMatches = 0, triggered = 0;
         for (int i = 0; i < rules.length(); i++) {
             JSONObject rule = rules.optJSONObject(i);
+            if (rule == null || "notification".equals(rule.optString("source"))) continue;
             if (rule != null && rule.optBoolean("enabled", true)) {
                 enabled++;
                 if (Store.numbers(rule).contains(Store.normalize(sender))) senderMatches++;

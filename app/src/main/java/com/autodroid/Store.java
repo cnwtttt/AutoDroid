@@ -37,8 +37,58 @@ final class Store {
     static String numberText(JSONObject rule) { return String.join("\n", numbers(rule)); }
     static boolean matches(JSONObject rule, String sender, String body) {
         String actual = normalize(sender);
-        return rule.optBoolean("enabled", true) && !actual.isEmpty() && numbers(rule).contains(actual)
+        return !"notification".equals(rule.optString("source")) && rule.optBoolean("enabled", true) && !actual.isEmpty() && numbers(rule).contains(actual)
             && body.contains(rule.optString("keyword"));
+    }
+    static LinkedHashSet<String> parseNames(String text) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (String entry : text.split("[,，;；\\n\\r]+")) {
+            String name = Normalizer.normalize(entry, Normalizer.Form.NFKC).trim();
+            if (!name.isEmpty()) result.add(name);
+        }
+        return result;
+    }
+    static boolean notificationMatches(JSONObject rule, Collection<String> senders, String body) {
+        if (!"notification".equals(rule.optString("source")) || !rule.optBoolean("enabled", true)
+                || !body.contains(rule.optString("keyword"))) return false;
+        Set<String> aliases = parseNames(rule.optString("senderNames"));
+        Set<String> phones = numbers(rule);
+        for (String sender : senders) {
+            if (sender == null || sender.trim().isEmpty()) continue;
+            if (aliases.contains(Normalizer.normalize(sender, Normalizer.Form.NFKC).trim())) return true;
+            if (phones.contains(normalize(sender))) return true;
+        }
+        return false;
+    }
+    static String digest(String value) {
+        try {
+            byte[] hash = java.security.MessageDigest.getInstance("SHA-256").digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder();
+            for (byte b : hash) out.append(String.format(Locale.ROOT, "%02x", b & 255));
+            return out.toString();
+        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+    static boolean rememberEvent(JSONArray history, String fingerprint) {
+        for (int i = 0; i < history.length(); i++) if (fingerprint.equals(history.optString(i))) return false;
+        while (history.length() >= 128) history.remove(0);
+        history.put(fingerprint);
+        return true;
+    }
+    static synchronized boolean seenNotification(Context c, String event) {
+        String fingerprint = digest(event);
+        try {
+            JSONArray history = new JSONArray(prefs(c).getString("notificationHistory", "[]"));
+            for (int i = 0; i < history.length(); i++) if (fingerprint.equals(history.optString(i))) return true;
+        } catch (JSONException ignored) { }
+        return false;
+    }
+    static synchronized boolean acceptNotification(Context c, String event) {
+        JSONArray history;
+        try { history = new JSONArray(prefs(c).getString("notificationHistory", "[]")); }
+        catch (JSONException e) { history = new JSONArray(); }
+        if (!rememberEvent(history, digest(event))) return false;
+        prefs(c).edit().putString("notificationHistory", history.toString()).commit();
+        return true;
     }
     static String normalize(String number) {
         if (number == null) return "";
