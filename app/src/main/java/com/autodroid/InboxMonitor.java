@@ -29,28 +29,54 @@ final class InboxMonitor implements AutoCloseable {
         since=Store.prefs(context).getLong("monitorSince",System.currentTimeMillis());
         thread.start(); worker=new Handler(thread.getLooper());
         observer=new ContentObserver(worker) {
-            @Override public void onChange(boolean selfChange) { schedule(); }
-            @Override public void onChange(boolean selfChange,Uri uri) { schedule(); }
+            @Override public void onChange(boolean selfChange) { changed(); }
+            @Override public void onChange(boolean selfChange,Uri uri) { changed(); }
         };
     }
     void start() {
         worker.post(() -> {
-            if (!active()) return;
-            try {
-                context.getContentResolver().registerContentObserver(Telephony.Sms.CONTENT_URI,true,observer);
-                registered=true;
-                context.getContentResolver().registerContentObserver(Uri.parse("content://mms-sms"),true,observer);
-                long last=Store.prefs(context).getLong("inboxSince",-1)==since ? Store.prefs(context).getLong("inboxLastId",0) : 0;
-                checkpoint=new InboxCheckpoint(since,last);
-                Store.log(context,"INBOX_OBSERVER_REGISTERED since="+since+" lastId="+last+"（只查询监听开始后的收件箱记录）");
-                schedule();
-            } catch (RuntimeException e) {
-                Store.log(context,"INBOX_OBSERVER_FAILED "+e.getClass().getSimpleName()+"，请检查读取短信权限");
-                if (registered) { context.getContentResolver().unregisterContentObserver(observer); registered=false; }
-            }
+            initialize();
+            if (active()) worker.postDelayed(this::healthTick,30000);
         });
     }
+    private void initialize() {
+        if (!active() || registered) return;
+        try {
+            context.getContentResolver().registerContentObserver(Telephony.Sms.CONTENT_URI,true,observer);
+            registered=true;
+            context.getContentResolver().registerContentObserver(Uri.parse("content://mms-sms"),true,observer);
+            long last=Store.prefs(context).getLong("inboxSince",-1)==since ? Store.prefs(context).getLong("inboxLastId",0) : 0;
+            checkpoint=new InboxCheckpoint(since,last);
+            Store.log(context,"INBOX_OBSERVER_REGISTERED since="+since+" lastId="+last+"（只查询监听开始后的收件箱记录）");
+            schedule();
+        } catch (RuntimeException e) {
+            Store.log(context,"INBOX_OBSERVER_FAILED "+e.getClass().getSimpleName()+"，请检查读取短信权限");
+            if (registered) { context.getContentResolver().unregisterContentObserver(observer); registered=false; }
+        }
+    }
+    private String accessState() {
+        android.app.ActivityManager.RunningAppProcessInfo info=new android.app.ActivityManager.RunningAppProcessInfo();
+        android.app.ActivityManager.getMyMemoryState(info);
+        String op;
+        try { op=Integer.toString(context.getSystemService(android.app.AppOpsManager.class).checkOpNoThrow(
+            android.app.AppOpsManager.OPSTR_READ_SMS,android.os.Process.myUid(),context.getPackageName())); }
+        catch (RuntimeException e) { op=e.getClass().getSimpleName(); }
+        return " processImportance="+info.importance+" readSms="+(context.checkSelfPermission(Manifest.permission.READ_SMS)==PackageManager.PERMISSION_GRANTED)
+            +" appOpCheck="+op+" batteryExempt="+context.getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(context.getPackageName());
+    }
+    private void healthTick() {
+        if (!active()) return;
+        Store.log(context,"INBOX_HEARTBEAT registered="+registered+" queryReady="+ready+accessState());
+        if (!registered) initialize();
+        schedule();
+        worker.postDelayed(this::healthTick,30000);
+    }
     void requestScan() { worker.post(this::schedule); }
+    private void changed() {
+        if (!active()) return;
+        Store.log(context,"INBOX_OBSERVER_CHANGE 收到数据库变化回调");
+        schedule();
+    }
     private boolean active() {
         return !closed && Store.prefs(context).getBoolean("monitor",false)
             && Store.prefs(context).getLong("monitorSince",since)==since;
@@ -95,13 +121,15 @@ final class InboxMonitor implements AutoCloseable {
                 Store.log(context,"INBOX_MESSAGE id="+id+" type="+cursor.getInt(4)+" sender="+Store.maskedSender(sender)+" matchedRules="+matched);
             }
         } catch (RuntimeException e) {
-            Store.log(context,"INBOX_SCAN_FAILED "+e.getClass().getSimpleName()+"（未记录号码或正文）");
+            Store.log(context,"INBOX_SCAN_FAILED "+e.getClass().getSimpleName()+accessState());
             return;
         }
+        Store.log(context,"INBOX_SCAN_RESULT rows="+processed+" lastId="+checkpoint.lastId()+accessState());
         if (processed==100) schedule();
     }
     @Override public void close() {
         closed=true;
+        Store.log(context,"INBOX_OBSERVER_CLOSING 注销监听并停止后台补查");
         // Registration and unregistration run on the same worker to avoid a stop/start race.
         worker.post(() -> {
             if (registered) {

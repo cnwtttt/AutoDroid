@@ -185,6 +185,10 @@ public class MacroService extends Service {
         if (Store.prefs(this).getBoolean("monitor", false)) { if (foreground) promote(false); }
         else { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
     }
+    @Override public void onTaskRemoved(Intent rootIntent) {
+        Store.log(this,"SERVICE_TASK_REMOVED monitor="+Store.prefs(this).getBoolean("monitor",false));
+        super.onTaskRemoved(rootIntent);
+    }
     @Override public void onDestroy() { if (inboxMonitor!=null) { inboxMonitor.close(); inboxMonitor=null; } isRunning = false; Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

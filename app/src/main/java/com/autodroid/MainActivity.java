@@ -32,7 +32,8 @@ public class MainActivity extends Activity {
         render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.4.0 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.4.1 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+            + " readSmsPermission=" + granted(Manifest.permission.READ_SMS)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
@@ -40,6 +41,10 @@ public class MainActivity extends Activity {
             try { Store.log(this,"MONITOR_RESTORE 恢复前台服务"); startForegroundService(new Intent(this,MacroService.class)); }
             catch (RuntimeException e) { Store.log(this,"MONITOR_RESTORE_FAILED " + e.getMessage()); }
         }
+    }
+    @Override public void onStop() {
+        Store.log(this,"APP_ACTIVITY_STOP monitor="+Store.prefs(this).getBoolean("monitor",false)+" serviceRunning="+MacroService.isRunning);
+        super.onStop();
     }
     private LinearLayout column() { LinearLayout l = new LinearLayout(this); l.setOrientation(1); l.setPadding(24,16,24,16); return l; }
     private TextView text(LinearLayout parent, String value, int size) {

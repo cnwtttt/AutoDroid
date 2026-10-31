@@ -1,4 +1,4 @@
-# AutoDroid 0.4.0
+# AutoDroid 0.4.1
 
 普通手机短信警告自动化应用，Android 8.0（API 26）以上，无需 root。
 
@@ -236,3 +236,18 @@ READ_SMS 是独立权限，已有 RECEIVE_SMS 不代表能读取。授权失败�
 同时 usesCleartextTraffic=false，播放仅接受 content/file/android.resource 本地URI，禁止HTTP等网络音源。
 系统短信应用本身接收RCS仍可能联网，本应用的网络禁用不影响其他应用。用户主动选择系统文件提供者时，其云端行为由该提供者管理。
 测试包括75项匹配、21项备份及15项ID进度/历史过滤检查；Observer实际投递和后台行为还需手机验证。
+
+## 0.4.1 后台查询补偿与诊断
+
+Observer始终注册于前台Service，不依赖Activity。新增每30秒一次的Handler补查，
+作为Observer变化回调缺失时的补偿；复用同一ID进度，不重复执行。后台查询错误或注册失败后，
+后续补查会继续尝试，不再必须打开Activity才有下一次查询机会。升级完成时尝试恢复已开启的服务。
+日志 APP_ACTIVITY_STOP 表示Activity退后台，INBOX_OBSERVER_CHANGE 表示回调到达，
+INBOX_HEARTBEAT 表示服务工作线程仍运行，INBOX_SCAN_RESULT 表示查询结果数量及进度。
+附带 processImportance、READ_SMS授权、AppOps检查值和电池优化豁免状态；AppOps检查通过不保证厂商Provider放行。
+
+若后台心跳消失，应检查服务被杀/冻结、自启动和省电限制；若心跳存在、查询报错或仅返回0条，
+打开Activity后才出现新记录，则需进一步检查READ_SMS AppOps及厂商后台数据访问策略。
+可在手机shell执行 appops get com.autodroid READ_SMS 和 dumpsys activity services com.autodroid。
+本版本不能绕过系统权限限制，不使用永久唤醒锁或精确闹钟强制保活；锁屏Doze/冻结可延迟30秒补查。
+补查不发起网络请求，应用无联网权限保持不变。后台效果仍需目标手机验证。
