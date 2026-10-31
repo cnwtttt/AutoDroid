@@ -20,6 +20,7 @@ import org.json.*;
 
 public class MainActivity extends Activity {
     private LinearLayout root;
+    private boolean readingRecentSms;
     private EditText contactTarget;
     private String selectedSound = "";
     private TextView soundLabel;
@@ -31,7 +32,7 @@ public class MainActivity extends Activity {
         render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.7 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.8 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
@@ -77,6 +78,7 @@ public class MainActivity extends Activity {
             render();
         });
         button(root, "权限与后台设置", this::permissions);
+        button(root,"读取最近消息诊断",this::recentSmsDiagnostics);
         button(root, "＋ 新建短信宏", () -> edit(-1));
         button(root,"导出宏备份", () -> launch(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
             .setType("application/json").putExtra(Intent.EXTRA_TITLE,"AutoDroid-macros-"+new java.text.SimpleDateFormat("yyyyMMdd-HHmmss",Locale.ROOT).format(new Date())+".json"),30));
@@ -288,10 +290,49 @@ public class MainActivity extends Activity {
         catch (RuntimeException e) { Store.log(this,"恢复后停止服务失败："+e.getMessage()); }
         render(); toast("已恢复 "+imported.length()+" 条宏；请重新检查权限和音源后开启监听");
     }
+    private void recentSmsDiagnostics() {
+        if (readingRecentSms) { toast("正在读取，请稍候"); return; }
+        if (!granted(Manifest.permission.READ_SMS)) {
+            new AlertDialog.Builder(this).setTitle("读取最近消息诊断")
+                .setMessage("需要读取短信权限，用于查看标准收件箱最近20条消息的号码、时间和正文，确认RCS是否也存入标准短信表。只在此页面展示，不保存、不写入logcat，不执行宏。")
+                .setPositiveButton("申请权限",(d,w) -> requestPermissions(new String[]{Manifest.permission.READ_SMS},4))
+                .setNegativeButton("取消",null).show();
+            return;
+        }
+        readingRecentSms=true; toast("正在查询标准短信收件箱…");
+        Context app = getApplicationContext();
+        new Thread(() -> {
+            try {
+                RecentSmsDiagnostics.Result result = RecentSmsDiagnostics.read(app);
+                Store.log(app,"RECENT_SMS_DIAGNOSTIC success rows="+result.count+"（号码与正文仅在诊断页面展示）");
+                runOnUiThread(() -> {
+                    readingRecentSms=false;
+                    if (isFinishing() || isDestroyed()) return;
+                    LinearLayout box=column();
+                    TextView report=text(box,result.text,15); report.setTextIsSelectable(true);
+                    ScrollView scroll=new ScrollView(this); scroll.addView(box);
+                    new AlertDialog.Builder(this).setTitle("最近消息诊断 · "+result.count+" 条")
+                        .setView(scroll).setPositiveButton("关闭",null)
+                        .setNeutralButton("重新读取",(d,w) -> recentSmsDiagnostics()).show();
+                });
+            } catch (RuntimeException e) {
+                Store.log(app,"RECENT_SMS_DIAGNOSTIC failed="+e.getClass().getSimpleName());
+                runOnUiThread(() -> {
+                    readingRecentSms=false;
+                    if (isFinishing() || isDestroyed()) return;
+                    new AlertDialog.Builder(this).setTitle("无法读取最近消息")
+                        .setMessage(e.getClass().getSimpleName()+"："+e.getMessage()+"\n\n接收短信权限不等于读取短信权限；系统也可能限制第三方读取。请检查读取短信授权。")
+                        .setPositiveButton("应用权限设置",(d,w) -> launch(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName())),20))
+                        .setNegativeButton("关闭",null).show();
+                });
+            }
+        },"recent-sms-diagnostic").start();
+    }
     private void permissions() {
         LinearLayout box = column();
-        text(box,"短信仅用于本机匹配，不上传、不读取历史短信。请逐项授权后开启监听。",16);
+        text(box,"短信触发用于本机匹配，不上传；“读取最近消息诊断”仅在你点击时读取最近记录并在页面展示。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
+        button(box,(granted(Manifest.permission.READ_SMS)?"✓ ":"○ ")+"读取短信权限（仅用于最近消息诊断）",this::recentSmsDiagnostics);
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
         if (Build.VERSION.SDK_INT >= 33) button(box,(granted(Manifest.permission.POST_NOTIFICATIONS)?"✓ ":"○ ")+"通知权限", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},2));
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
@@ -309,6 +350,6 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.addView(box);
         new AlertDialog.Builder(this).setTitle("权限与后台设置（重新打开可刷新状态）").setView(scroll).setPositiveButton("关闭",null).show();
     }
-    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); if (r == 3 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && contactTarget != null) chooseContacts(contactTarget); }
+    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); if (r == 3 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && contactTarget != null) chooseContacts(contactTarget); if (r == 4 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED) recentSmsDiagnostics(); }
     private void toast(String s) { Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
 }
