@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
         render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.5 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.6 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
@@ -241,6 +241,11 @@ public class MainActivity extends Activity {
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
         if (Build.VERSION.SDK_INT >= 33) button(box,(granted(Manifest.permission.POST_NOTIFICATIONS)?"✓ ":"○ ")+"通知权限", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},2));
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
+        button(box,"重要警告通知设置（横幅 / 声音 / 锁屏）", () -> {
+            MacroService.ensureAlertChannel(this);
+            launch(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,"alerts"),20);
+        });
         NotificationManager nm = getSystemService(NotificationManager.class);
         button(box,(nm.isNotificationPolicyAccessGranted()?"✓ ":"○ ")+"勿扰访问（铃声/通知音量受限时）", () -> launch(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS),20));
         boolean exempt = getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName());

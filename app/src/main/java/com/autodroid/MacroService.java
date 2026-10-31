@@ -17,7 +17,7 @@ public class MacroService extends Service {
     private AudioFocusRequest focus;
     private View overlay;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable timeout = () -> stopAlert();
+    private final Runnable timeout = () -> stopAlert(false);
     private boolean foreground;
     static volatile boolean isRunning;
     static final int[] STREAMS = {AudioManager.STREAM_ALARM, AudioManager.STREAM_MUSIC, AudioManager.STREAM_RING, AudioManager.STREAM_NOTIFICATION};
@@ -26,7 +26,12 @@ public class MacroService extends Service {
         Store.log(this, "SERVICE_CREATE");
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel("monitor", "后台监听", NotificationManager.IMPORTANCE_LOW));
-        nm.createNotificationChannel(new NotificationChannel("alerts", "宏警告", NotificationManager.IMPORTANCE_HIGH));
+        ensureAlertChannel(this);
+    }
+    static void ensureAlertChannel(Context context) {
+        NotificationChannel channel = new NotificationChannel("alerts", "重要宏警告", NotificationManager.IMPORTANCE_HIGH);
+        channel.setDescription("宏执行时的重要警告通知；可在此设置横幅、声音和锁屏显示");
+        context.getSystemService(NotificationManager.class).createNotificationChannel(channel);
     }
     private PendingIntent command(String action) {
         return PendingIntent.getService(this, action.hashCode(), new Intent(this, MacroService.class).setAction(action), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -62,7 +67,7 @@ public class MacroService extends Service {
                     run(rule,intent.getStringExtra("source"));
                 } else { Store.log(this,"COMBINED_DUPLICATE 同一宏10秒内相同内容的另一来源已执行，跳过本次重复"); }
             }
-            catch (Exception e) { Store.log(this, "执行失败：" + e.getMessage()); stopAlert(); }
+            catch (Exception e) { Store.log(this, "执行失败：" + e.getMessage()); stopAlert(false); }
         } else if (!Store.prefs(this).getBoolean("monitor", false)) { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
         return Store.prefs(this).getBoolean("monitor", false) ? START_STICKY : START_NOT_STICKY;
     }
@@ -85,7 +90,7 @@ public class MacroService extends Service {
             focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(attrs).setOnAudioFocusChangeListener(change -> {
                     if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                        Store.log(this, "失去音频焦点，停止警告"); stopAlert();
+                        Store.log(this, "失去音频焦点，停止声音并保留通知"); stopAlert(false);
                     }
                 }).build();
             if (am.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) throw new IllegalStateException("系统未授予音频焦点");
@@ -95,7 +100,7 @@ public class MacroService extends Service {
             String uri = rule.optString("sound", "");
             player.setDataSource(this, uri.isEmpty() ? Settings.System.DEFAULT_ALARM_ALERT_URI : Uri.parse(uri));
             player.setLooping(true);
-            player.setOnErrorListener((mp, what, extra) -> { Store.log(this, "音源播放失败：" + what + "/" + extra); stopAlert(); return true; });
+            player.setOnErrorListener((mp, what, extra) -> { Store.log(this, "音源播放失败：" + what + "/" + extra); stopAlert(false); return true; });
             player.setOnPreparedListener(mp -> { mp.start(); Store.log(this, "音源开始播放"); });
             player.prepareAsync();
         } catch (Exception e) { Store.log(this, "播放失败：" + e.getMessage()); releaseAudio(); promote(false); }
@@ -103,10 +108,23 @@ public class MacroService extends Service {
     }
     private void showAlert(String title, String message) {
         Notification n = new Notification.Builder(this, "alerts").setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentTitle(title).setContentText(message).setStyle(new Notification.BigTextStyle().bigText(message))
+            .setCategory(Notification.CATEGORY_ALARM).setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setWhen(System.currentTimeMillis()).setShowWhen(true).setOnlyAlertOnce(false)
+            .setContentTitle("重要警告 · " + title).setContentText(message).setStyle(new Notification.BigTextStyle().bigText(message))
             .setContentIntent(PendingIntent.getActivity(this, 2, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE))
             .addAction(new Notification.Action.Builder(null, "确认并停止", command("SILENCE")).build()).build();
-        getSystemService(NotificationManager.class).notify(2, n);
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        NotificationChannel channel = nm.getNotificationChannel("alerts");
+        if (!nm.areNotificationsEnabled() || (channel != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE)) {
+            Store.log(this,"IMPORTANT_NOTIFY_BLOCKED 请授予通知权限，并在重要警告通知设置中开启该通道");
+        } else {
+            try {
+                nm.notify(2,n);
+                Store.log(this,"IMPORTANT_NOTIFY_POSTED id=2 importance=" + (channel == null ? -1 : channel.getImportance()));
+                if (channel != null && channel.getImportance() < NotificationManager.IMPORTANCE_HIGH)
+                    Store.log(this,"IMPORTANT_NOTIFY_HINT 通道已被设为较低重要性，请在系统设置中允许横幅提醒");
+            } catch (RuntimeException e) { Store.log(this,"IMPORTANT_NOTIFY_FAILED " + e.getMessage()); }
+        }
         if (!Settings.canDrawOverlays(this)) { Store.log(this, "未授予悬浮窗权限，仅发送警告通知"); return; }
         LinearLayout box = new LinearLayout(this); box.setOrientation(1); box.setPadding(40, 36, 40, 24); box.setBackgroundColor(0xFFfff4e5);
         TextView heading = new TextView(this); heading.setText("⚠ " + title); heading.setTextSize(23); heading.setTextColor(0xFF9A3412); box.addView(heading);
@@ -127,8 +145,11 @@ public class MacroService extends Service {
         releaseAudio();
         if (overlay != null) { getSystemService(WindowManager.class).removeView(overlay); overlay = null; }
     }
-    private void stopAlert() {
-        stopAlertResources(); getSystemService(NotificationManager.class).cancel(2);
+    private void stopAlert() { stopAlert(true); }
+    private void stopAlert(boolean dismissNotice) {
+        stopAlertResources();
+        if (dismissNotice) getSystemService(NotificationManager.class).cancel(2);
+        else Store.log(this,"IMPORTANT_NOTIFY_RETAINED 声音已停止，通知保留至确认或手动划掉");
         if (Store.prefs(this).getBoolean("monitor", false)) { if (foreground) promote(false); }
         else { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
     }
