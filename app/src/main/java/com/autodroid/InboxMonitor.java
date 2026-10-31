@@ -17,6 +17,7 @@ final class InboxMonitor implements AutoCloseable {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final HandlerThread thread = new HandlerThread("inbox-monitor");
     private final Handler worker;
+    private final MonitorDiagnostics diagnostics;
     private final long since;
     private final ContentObserver observer;
     private volatile boolean closed;
@@ -28,6 +29,7 @@ final class InboxMonitor implements AutoCloseable {
         this.context=context.getApplicationContext(); this.listener=listener;
         since=Store.prefs(context).getLong("monitorSince",System.currentTimeMillis());
         thread.start(); worker=new Handler(thread.getLooper());
+        diagnostics=new MonitorDiagnostics(main,worker);
         observer=new ContentObserver(worker) {
             @Override public void onChange(boolean selfChange) { changed(); }
             @Override public void onChange(boolean selfChange,Uri uri) { changed(); }
@@ -41,6 +43,7 @@ final class InboxMonitor implements AutoCloseable {
     }
     private void initialize() {
         if (!active() || registered) return;
+        diagnostics.phase("register");
         try {
             context.getContentResolver().registerContentObserver(Telephony.Sms.CONTENT_URI,true,observer);
             registered=true;
@@ -66,6 +69,7 @@ final class InboxMonitor implements AutoCloseable {
     }
     private void healthTick() {
         if (!active()) return;
+        diagnostics.phase("heartbeat");
         Store.log(context,"INBOX_HEARTBEAT registered="+registered+" queryReady="+ready+accessState());
         if (!registered) initialize();
         schedule();
@@ -88,6 +92,7 @@ final class InboxMonitor implements AutoCloseable {
     private void scan() {
         scheduled=false;
         if (!active()) return;
+        diagnostics.phase("query");
         if (context.checkSelfPermission(Manifest.permission.READ_SMS)!=PackageManager.PERMISSION_GRANTED) {
             Store.log(context,"INBOX_READ_BLOCKED 读取短信权限已撤销，数据库自动触发暂停"); return;
         }
@@ -96,6 +101,7 @@ final class InboxMonitor implements AutoCloseable {
                 new String[]{"_id","address","body","date","type"},"_id > ? AND date >= ?",
                 new String[]{Long.toString(checkpoint.lastId()),Long.toString(since)},"_id ASC")) {
             if (cursor==null) throw new IllegalStateException("null cursor");
+            diagnostics.phase("cursor");
             if (!ready) { ready=true; Store.log(context,"INBOX_OBSERVER_READY 数据库查询可用"); }
             while (processed<100 && active() && cursor.moveToNext()) {
                 long id=cursor.getLong(0), date=cursor.getLong(3);
@@ -104,11 +110,13 @@ final class InboxMonitor implements AutoCloseable {
                 processed++;
                 // Persist progress before scheduling actions: a crash must not replay completed rows.
                 if (!active()) return;
+                diagnostics.phase("checkpoint");
                 if (!Store.prefs(context).edit().putLong("inboxSince",since).putLong("inboxLastId",checkpoint.lastId()).commit()) {
                     checkpoint=new InboxCheckpoint(since,previous);
                     throw new IllegalStateException("checkpoint save failed");
                 }
                 String sender=cursor.getString(1), body=cursor.getString(2);
+                diagnostics.phase("match");
                 if (sender==null || body==null) { Store.log(context,"INBOX_SKIP id="+id+" 字段为空"); continue; }
                 JSONArray rules=Store.rules(context); int matched=0;
                 for (int i=0;i<rules.length();i++) {
@@ -121,14 +129,18 @@ final class InboxMonitor implements AutoCloseable {
                 Store.log(context,"INBOX_MESSAGE id="+id+" type="+cursor.getInt(4)+" sender="+Store.maskedSender(sender)+" matchedRules="+matched);
             }
         } catch (RuntimeException e) {
+            diagnostics.phase("query-failed");
             Store.log(context,"INBOX_SCAN_FAILED "+e.getClass().getSimpleName()+accessState());
             return;
         }
+        diagnostics.phase("result-log");
         Store.log(context,"INBOX_SCAN_RESULT rows="+processed+" lastId="+checkpoint.lastId()+accessState());
+        diagnostics.phase("idle");
         if (processed==100) schedule();
     }
     @Override public void close() {
         closed=true;
+        diagnostics.close();
         Store.log(context,"INBOX_OBSERVER_CLOSING 注销监听并停止后台补查");
         // Registration and unregistration run on the same worker to avoid a stop/start race.
         worker.post(() -> {

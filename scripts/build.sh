@@ -7,7 +7,8 @@ ANDROID_JAR="$AOSP_ROOT/prebuilts/sdk/36/public/android.jar"
 OUT="$PWD/build/offline"
 mkdir -p "$OUT/classes" "$OUT/dex"
 sed 's/<manifest /<manifest package="com.autodroid" /' app/src/main/AndroidManifest.xml > "$OUT/AndroidManifest.xml"
-"$TOOLS/aapt2" link -I "$ANDROID_JAR" --manifest "$OUT/AndroidManifest.xml" -o "$OUT/resources.apk" --min-sdk-version 26 --target-sdk-version 36 --version-code 15 --version-name 0.4.1
+"$TOOLS/aapt2" compile --dir app/src/main/res -o "$OUT/compiled-res.zip"
+"$TOOLS/aapt2" link -I "$ANDROID_JAR" --manifest "$OUT/AndroidManifest.xml" -o "$OUT/resources.apk" --min-sdk-version 26 --target-sdk-version 36 --version-code 19 --version-name 0.5.1 "$OUT/compiled-res.zip"
 find app/src/main/java -name '*.java' > "$OUT/sources.txt"
 javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$ANDROID_JAR:$TOOLS/core-lambda-stubs.jar" -d "$OUT/classes" @"$OUT/sources.txt"
 jar cf "$OUT/classes.jar" -C "$OUT/classes" .
