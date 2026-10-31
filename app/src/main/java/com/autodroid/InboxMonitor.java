@@ -12,6 +12,8 @@ import org.json.*;
 
 /** Single worker serializes queries; macro execution is handed back to the service main thread. */
 final class InboxMonitor implements AutoCloseable {
+    private static final long FALLBACK_SCAN_INTERVAL_MS = 5 * 60 * 1000L;
+
     interface Listener {
         void matched(JSONObject rule, long id);
     }
@@ -21,7 +23,6 @@ final class InboxMonitor implements AutoCloseable {
     private final Handler main = new Handler(Looper.getMainLooper());
     private final HandlerThread thread = new HandlerThread("inbox-monitor");
     private final Handler worker;
-    private final MonitorDiagnostics diagnostics;
     private final long since;
     private final ContentObserver observer;
     private volatile boolean closed;
@@ -36,7 +37,6 @@ final class InboxMonitor implements AutoCloseable {
         since = Store.prefs(context).getLong("monitorSince", System.currentTimeMillis());
         thread.start();
         worker = new Handler(thread.getLooper());
-        diagnostics = new MonitorDiagnostics(main, worker);
         observer =
                 new ContentObserver(worker) {
                     @Override
@@ -55,13 +55,13 @@ final class InboxMonitor implements AutoCloseable {
         worker.post(
                 () -> {
                     initialize();
-                    if (active()) worker.postDelayed(this::healthTick, 30000);
+                    if (active()) worker.postDelayed(this::fallbackTick, FALLBACK_SCAN_INTERVAL_MS);
                 });
     }
 
     private void initialize() {
         if (!active() || registered) return;
-        diagnostics.phase("register");
+
         try {
             context.getContentResolver()
                     .registerContentObserver(Telephony.Sms.CONTENT_URI, true, observer);
@@ -122,19 +122,12 @@ final class InboxMonitor implements AutoCloseable {
                         .isIgnoringBatteryOptimizations(context.getPackageName());
     }
 
-    private void healthTick() {
+    // Observer callbacks are the primary trigger; this delayed scan only covers missed events.
+    private void fallbackTick() {
         if (!active()) return;
-        diagnostics.phase("heartbeat");
-        Store.log(
-                context,
-                "INBOX_HEARTBEAT registered="
-                        + registered
-                        + " queryReady="
-                        + ready
-                        + accessState());
         if (!registered) initialize();
         schedule();
-        worker.postDelayed(this::healthTick, 30000);
+        worker.postDelayed(this::fallbackTick, FALLBACK_SCAN_INTERVAL_MS);
     }
 
     void requestScan() {
@@ -162,7 +155,7 @@ final class InboxMonitor implements AutoCloseable {
     private void scan() {
         scheduled = false;
         if (!active()) return;
-        diagnostics.phase("query");
+
         if (context.checkSelfPermission(Manifest.permission.READ_SMS)
                 != PackageManager.PERMISSION_GRANTED) {
             Store.log(context, context.getString(R.string.log_inbox_read_blocked_detail));
@@ -180,7 +173,7 @@ final class InboxMonitor implements AutoCloseable {
                                 },
                                 "_id ASC")) {
             if (cursor == null) throw new IllegalStateException("null cursor");
-            diagnostics.phase("cursor");
+
             if (!ready) {
                 ready = true;
                 Store.log(context, context.getString(R.string.log_inbox_observer_ready));
@@ -193,7 +186,7 @@ final class InboxMonitor implements AutoCloseable {
                 // Persist progress before scheduling actions: a crash must not replay completed
                 // rows.
                 if (!active()) return;
-                diagnostics.phase("checkpoint");
+
                 if (!Store.prefs(context)
                         .edit()
                         .putLong("inboxSince", since)
@@ -203,7 +196,7 @@ final class InboxMonitor implements AutoCloseable {
                     throw new IllegalStateException("checkpoint save failed");
                 }
                 String sender = cursor.getString(1), body = cursor.getString(2);
-                diagnostics.phase("match");
+
                 if (sender == null || body == null) {
                     Store.log(
                             context,
@@ -236,11 +229,11 @@ final class InboxMonitor implements AutoCloseable {
                                 + matched);
             }
         } catch (RuntimeException e) {
-            diagnostics.phase("query-failed");
+
             Store.log(context, "INBOX_SCAN_FAILED " + e.getClass().getSimpleName() + accessState());
             return;
         }
-        diagnostics.phase("result-log");
+
         Store.log(
                 context,
                 "INBOX_SCAN_RESULT rows="
@@ -248,14 +241,13 @@ final class InboxMonitor implements AutoCloseable {
                         + " lastId="
                         + checkpoint.lastId()
                         + accessState());
-        diagnostics.phase("idle");
+
         if (processed == 100) schedule();
     }
 
     @Override
     public void close() {
         closed = true;
-        diagnostics.close();
         Store.log(context, context.getString(R.string.log_inbox_observer_closing));
         // Registration and unregistration run on the same worker to avoid a stop/start race.
         worker.post(

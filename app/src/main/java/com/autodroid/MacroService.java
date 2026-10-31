@@ -315,28 +315,10 @@ public class MacroService extends Service {
             Store.log(this, getString(R.string.log_overlay_permission_missing));
             return;
         }
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(1);
-        box.setPadding(40, 36, 40, 24);
-        box.setBackgroundColor(0xFFfff4e5);
-        TextView heading = new TextView(this);
-        heading.setText(getString(R.string.overlay_alert_title, title));
-        heading.setTextSize(23);
-        heading.setTextColor(0xFF9A3412);
-        box.addView(heading);
-        TextView body = new TextView(this);
-        body.setText(message);
-        body.setTextSize(18);
-        body.setTextColor(0xFF202020);
-        body.setPadding(0, 24, 0, 24);
-        box.addView(body);
-        Button close = new Button(this);
-        close.setText(getString(R.string.confirm_stop_audio));
-        close.setOnClickListener(v -> stopAlert());
-        box.addView(close);
+        View box = AlertOverlay.create(this, title, message, this::stopAlert);
         WindowManager.LayoutParams p =
                 new WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.MATCH_PARENT,
+                        AlertOverlay.width(this),
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE

@@ -173,7 +173,7 @@
     <string name="nav_settings" formatted="false">设置</string>
     <string name="new_sms_macro" formatted="false">新建短信宏</string>
     <string name="notification_listener_label" formatted="false">AutoDroid 短信应用通知监听</string>
-    <string name="overlay_alert_title">⚠ %1$s</string>
+    <string name="overlay_alert_title">%1$s</string>
     <string name="page_unavailable">系统不支持此页面：%1$s</string>
     <string name="pause_monitor" formatted="false">暂停监听</string>
     <string name="permission_contacts" formatted="false">通讯录权限（可选，手填号码无需授权）</string>

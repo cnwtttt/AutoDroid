@@ -109,10 +109,19 @@ gradle :native-app:assembleRelease         # 原生备选也支持 Gradle
 新装使用者可创建自己的本地测试密钥，但不能覆盖由其他密钥签名的已有安装。
 此配置用于本机直接安装，未进行应用商店审核，不包含可公开分发的私钥。
 
+Compose 和原生模块的 Gradle Release 构建均开启 R8 代码压缩、优化、混淆与资源裁剪，
+并启用 AGP 8.12 的优化资源裁剪；Debug 构建不启用这些优化。
+排查 Release 崩溃时，请保留对应模块 `build/outputs/mapping/release/mapping.txt` 用于还原堆栈。
+AOSP 原生离线脚本仍使用 D8，不执行上述 Gradle Release 优化。
+
 原生离线脚本使用上层 AOSP 的 SDK 36、aapt2、R8、zipalign、apksigner，也可通过 `AOSP_ROOT` 指定。
 需要 javac、java、jar、zip。测试另需 JVM org.json jar，默认读取本机 Gradle 缓存，可通过 `JSON_JAR` 指定。
 原生 Gradle APK 位于 `native-app/build/outputs/apk/release/`。
 当前无预置音频文件，默认使用手机系统铃声。
+
+收件箱以 ContentObserver 实时回调为主，每 5 分钟补查一次并重试失败的监听注册。
+不再运行独立诊断心跳线程或定时线程探针；补查使用 Handler 延迟任务，不额外唤醒设备，
+系统休眠或调度限制可能推迟补查。
 
 ## 验证范围
 
