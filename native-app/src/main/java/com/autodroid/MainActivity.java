@@ -119,12 +119,21 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout column() {
-        return ui.column(20);
+        return ui.column(R.dimen.space_20);
     }
 
     private TextView text(LinearLayout parent, String value, int size) {
-        TextView t = ui.label(value, size, size >= 20 ? ui.ink : ui.muted, size >= 20);
-        t.setPadding(0, ui.dp(6), 0, ui.dp(6));
+        TextView t =
+                ui.label(
+                        value,
+                        size,
+                        getResources().getDimension(size)
+                                        >= getResources().getDimension(R.dimen.text_20)
+                                ? ui.ink
+                                : ui.muted,
+                        getResources().getDimension(size)
+                                >= getResources().getDimension(R.dimen.text_20));
+        t.setPadding(0, ui.dimension(R.dimen.space_6), 0, ui.dimension(R.dimen.space_6));
         parent.addView(t);
         return t;
     }
@@ -132,7 +141,7 @@ public class MainActivity extends Activity {
     private void button(LinearLayout parent, String label, Runnable action) {
         Button b = ui.button(label, false, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.topMargin = ui.dp(8);
+        lp.topMargin = ui.dimension(R.dimen.space_8);
         parent.addView(b, lp);
     }
 
@@ -154,7 +163,7 @@ public class MainActivity extends Activity {
     private void render() {
         if (activeScroll != null) scrollPositions[renderedPage] = activeScroll.getScrollY();
         renderedPage = selectedPage;
-        LinearLayout shell = ui.column(0);
+        LinearLayout shell = ui.column(R.dimen.space_0);
         shell.setBackgroundColor(ui.background);
         setContentView(shell);
         shell.setOnApplyWindowInsetsListener(
@@ -180,7 +189,10 @@ public class MainActivity extends Activity {
             getWindow()
                     .getInsetsController()
                     .setSystemBarsAppearance(
-                            ui.background == 0xFFF8F9FF
+                            (getResources().getConfiguration().uiMode
+                                                    & android.content.res.Configuration
+                                                            .UI_MODE_NIGHT_MASK)
+                                            != android.content.res.Configuration.UI_MODE_NIGHT_YES
                                     ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
                                             | WindowInsetsController
                                                     .APPEARANCE_LIGHT_NAVIGATION_BARS
@@ -188,12 +200,21 @@ public class MainActivity extends Activity {
                             WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
                                     | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
         LinearLayout bar = ui.row();
-        bar.setPadding(ui.dp(24), ui.dp(16), ui.dp(24), ui.dp(12));
-        TextView brand = ui.label(getString(R.string.app_name), 22, ui.ink, true);
+        bar.setPadding(
+                ui.dimension(R.dimen.space_24),
+                ui.dimension(R.dimen.space_16),
+                ui.dimension(R.dimen.space_24),
+                ui.dimension(R.dimen.space_12));
+        TextView brand = ui.label(getString(R.string.app_name), R.dimen.text_22, ui.ink, true);
         bar.addView(brand, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView local = ui.label(getString(R.string.local_only_badge), 12, ui.onAccent, false);
-        local.setPadding(ui.dp(12), ui.dp(6), ui.dp(12), ui.dp(6));
-        local.setBackground(ui.shape(ui.accent, 16));
+        TextView local =
+                ui.label(getString(R.string.local_only_badge), R.dimen.text_12, ui.onAccent, false);
+        local.setPadding(
+                ui.dimension(R.dimen.space_12),
+                ui.dimension(R.dimen.space_6),
+                ui.dimension(R.dimen.space_12),
+                ui.dimension(R.dimen.space_6));
+        local.setBackground(ui.shape(ui.accent, R.dimen.corner_medium));
         bar.addView(local);
         shell.addView(bar);
         FrameLayout body = new FrameLayout(this);
@@ -205,13 +226,23 @@ public class MainActivity extends Activity {
         final int restoreY = scrollPositions[selectedPage];
         scroll.post(() -> scroll.scrollTo(0, restoreY));
         body.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout wrapper = ui.column(0);
+        LinearLayout wrapper = ui.column(R.dimen.space_0);
         wrapper.setGravity(Gravity.CENTER_HORIZONTAL);
         scroll.addView(wrapper);
         root = column();
-        root.setPadding(ui.dp(24), ui.dp(8), ui.dp(24), ui.dp(selectedPage == 0 ? 104 : 24));
-        int width = getResources().getConfiguration().screenWidthDp;
-        wrapper.addView(root, new LinearLayout.LayoutParams(width > 640 ? ui.dp(640) : -1, -2));
+        root.setPadding(
+                ui.dimension(R.dimen.space_24),
+                ui.dimension(R.dimen.space_8),
+                ui.dimension(R.dimen.space_24),
+                ui.dimension(selectedPage == 0 ? R.dimen.space_104 : R.dimen.space_24));
+        int width = getResources().getDisplayMetrics().widthPixels;
+        wrapper.addView(
+                root,
+                new LinearLayout.LayoutParams(
+                        width > ui.dimension(R.dimen.space_640)
+                                ? ui.dimension(R.dimen.space_640)
+                                : -1,
+                        -2));
         if (selectedPage == 0) renderMacros();
         else if (selectedPage == 1) renderLogs();
         else renderSettings();
@@ -219,21 +250,29 @@ public class MainActivity extends Activity {
             Button fab = ui.button(getString(R.string.create_macro), true, () -> edit(-1));
             fab.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
             android.graphics.drawable.Drawable plus = ui.icon("add", ui.onPrimary).getDrawable();
-            plus.setBounds(0, 0, ui.dp(24), ui.dp(24));
+            plus.setBounds(0, 0, ui.dimension(R.dimen.space_24), ui.dimension(R.dimen.space_24));
             fab.setCompoundDrawables(plus, null, null, null);
-            fab.setCompoundDrawablePadding(ui.dp(8));
-            fab.setElevation(ui.dp(4));
-            fab.setMinHeight(ui.dp(56));
-            fab.setBackground(ui.ripple(ui.primary, 16));
+            fab.setCompoundDrawablePadding(ui.dimension(R.dimen.space_8));
+            fab.setElevation(ui.dimension(R.dimen.space_4));
+            fab.setMinHeight(ui.dimension(R.dimen.space_56));
+            fab.setBackground(ui.ripple(ui.primary, R.dimen.corner_medium));
             FrameLayout.LayoutParams fp =
                     new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.END);
-            fp.setMargins(ui.dp(24), 0, ui.dp(24), ui.dp(20));
+            fp.setMargins(
+                    ui.dimension(R.dimen.space_24),
+                    0,
+                    ui.dimension(R.dimen.space_24),
+                    ui.dimension(R.dimen.space_20));
             body.addView(fab, fp);
         }
         LinearLayout nav = ui.row();
         nav.setBaselineAligned(false);
         nav.setBackgroundColor(ui.container);
-        nav.setPadding(ui.dp(8), ui.dp(8), ui.dp(8), ui.dp(8));
+        nav.setPadding(
+                ui.dimension(R.dimen.space_8),
+                ui.dimension(R.dimen.space_8),
+                ui.dimension(R.dimen.space_8),
+                ui.dimension(R.dimen.space_8));
         String[]
                 labels =
                         {
@@ -245,27 +284,32 @@ public class MainActivity extends Activity {
         for (int i = 0; i < 3; i++) {
             final int page = i;
             boolean active = i == selectedPage;
-            LinearLayout item = ui.column(4);
+            LinearLayout item = ui.column(R.dimen.space_4);
             item.setGravity(Gravity.CENTER);
-            item.setMinimumHeight(ui.dp(64));
+            item.setMinimumHeight(ui.dimension(R.dimen.space_64));
             FrameLayout pill = new FrameLayout(this);
-            pill.setBackground(ui.shape(active ? ui.accent : ui.container, 20));
+            pill.setBackground(ui.shape(active ? ui.accent : ui.container, R.dimen.corner_card));
             FrameLayout.LayoutParams ip =
-                    new FrameLayout.LayoutParams(ui.dp(24), ui.dp(24), Gravity.CENTER);
+                    new FrameLayout.LayoutParams(
+                            ui.dimension(R.dimen.space_24),
+                            ui.dimension(R.dimen.space_24),
+                            Gravity.CENTER);
             pill.addView(ui.icon(icons[i], active ? ui.onAccent : ui.muted), ip);
             LinearLayout.LayoutParams pillParams =
-                    new LinearLayout.LayoutParams(ui.dp(64), ui.dp(32));
+                    new LinearLayout.LayoutParams(
+                            ui.dimension(R.dimen.space_64), ui.dimension(R.dimen.space_32));
             pillParams.gravity = Gravity.CENTER_HORIZONTAL;
             item.addView(pill, pillParams);
-            TextView label = ui.label(labels[i], 12, active ? ui.ink : ui.muted, active);
+            TextView label =
+                    ui.label(labels[i], R.dimen.text_12, active ? ui.ink : ui.muted, active);
             label.setGravity(Gravity.CENTER);
             label.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             label.setSingleLine(true);
             label.setIncludeFontPadding(false);
             LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, -2);
-            labelParams.topMargin = ui.dp(4);
+            labelParams.topMargin = ui.dimension(R.dimen.space_4);
             item.addView(label, labelParams);
-            item.setBackground(ui.ripple(ui.container, 20));
+            item.setBackground(ui.ripple(ui.container, R.dimen.corner_card));
             item.setSelected(active);
             item.setContentDescription(
                     labels[i] + (active ? getString(R.string.native_selected_suffix) : ""));
@@ -278,7 +322,9 @@ public class MainActivity extends Activity {
                     item, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
         }
         shell.addView(
-                nav, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ui.dp(80)));
+                nav,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ui.dimension(R.dimen.space_80)));
     }
 
     private void toggleMonitor(boolean enabled) {
@@ -312,25 +358,26 @@ public class MainActivity extends Activity {
     }
 
     private void renderMacros() {
-        text(root, getString(R.string.home_title), 28);
-        text(root, getString(R.string.home_subtitle), 14);
-        ui.space(root, 16);
+        text(root, getString(R.string.home_title), R.dimen.text_28);
+        text(root, getString(R.string.home_subtitle), R.dimen.text_14);
+        ui.space(root, R.dimen.space_16);
         boolean enabled = Store.prefs(this).getBoolean("monitor", false);
         LinearLayout status = ui.card(root, ui.accent);
         LinearLayout row = ui.row();
         row.addView(
                 ui.icon("message", ui.onAccent),
-                new LinearLayout.LayoutParams(ui.dp(28), ui.dp(28)));
+                new LinearLayout.LayoutParams(
+                        ui.dimension(R.dimen.space_28), ui.dimension(R.dimen.space_28)));
         TextView title =
                 ui.label(
                         enabled
                                 ? getString(R.string.monitor_enabled)
                                 : getString(R.string.monitor_paused),
-                        20,
+                        R.dimen.text_20,
                         ui.onAccent,
                         true);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, -2, 1);
-        tp.leftMargin = ui.dp(12);
+        tp.leftMargin = ui.dimension(R.dimen.space_12);
         row.addView(title, tp);
         status.addView(row);
         text(
@@ -338,7 +385,7 @@ public class MainActivity extends Activity {
                 enabled
                         ? getString(R.string.native_monitor_enabled_description)
                         : getString(R.string.native_monitor_paused_description),
-                14);
+                R.dimen.text_14);
         Button control =
                 ui.button(
                         enabled
@@ -347,15 +394,15 @@ public class MainActivity extends Activity {
                         true,
                         () -> toggleMonitor(enabled));
         LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(-1, -2);
-        cp.topMargin = ui.dp(12);
+        cp.topMargin = ui.dimension(R.dimen.space_12);
         status.addView(control, cp);
         if (!granted(Manifest.permission.READ_SMS)
                 || !Settings.canDrawOverlays(this)
                 || (Build.VERSION.SDK_INT >= 33
                         && !granted(Manifest.permission.POST_NOTIFICATIONS))) {
             LinearLayout notice = ui.card(root, ui.container);
-            text(notice, getString(R.string.complete_permissions), 18);
-            text(notice, getString(R.string.native_permission_hint), 14);
+            text(notice, getString(R.string.complete_permissions), R.dimen.text_18);
+            text(notice, getString(R.string.native_permission_hint), R.dimen.text_14);
             button(notice, getString(R.string.check_permissions), this::permissions);
         }
         JSONArray rules = Store.rules(this);
@@ -363,17 +410,21 @@ public class MainActivity extends Activity {
         for (int i = 0; i < rules.length(); i++)
             if (rules.optJSONObject(i) != null
                     && rules.optJSONObject(i).optBoolean("enabled", true)) enabledCount++;
-        text(root, getString(R.string.my_macros), 22);
-        text(root, getString(R.string.native_macro_count, rules.length(), enabledCount), 13);
-        ui.space(root, 12);
+        text(root, getString(R.string.my_macros), R.dimen.text_22);
+        text(
+                root,
+                getString(R.string.native_macro_count, rules.length(), enabledCount),
+                R.dimen.text_13);
+        ui.space(root, R.dimen.space_12);
         if (rules.length() == 0) {
             LinearLayout empty = ui.card(root, ui.surface);
             empty.setGravity(Gravity.CENTER);
             empty.addView(
                     ui.icon("macros", ui.primary),
-                    new LinearLayout.LayoutParams(ui.dp(48), ui.dp(48)));
-            text(empty, getString(R.string.empty_macros_title), 20);
-            text(empty, getString(R.string.native_empty_macros_description), 14);
+                    new LinearLayout.LayoutParams(
+                            ui.dimension(R.dimen.space_48), ui.dimension(R.dimen.space_48)));
+            text(empty, getString(R.string.empty_macros_title), R.dimen.text_20);
+            text(empty, getString(R.string.native_empty_macros_description), R.dimen.text_14);
             button(empty, getString(R.string.create_sms_macro), () -> edit(-1));
         }
         for (int i = 0; i < rules.length(); i++) {
@@ -382,14 +433,14 @@ public class MainActivity extends Activity {
             final int index = i;
             LinearLayout card = ui.card(root, ui.surface);
             LinearLayout header = ui.row();
-            TextView name = ui.label(r.optString("name"), 20, ui.ink, true);
+            TextView name = ui.label(r.optString("name"), R.dimen.text_20, ui.ink, true);
             header.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
             Switch toggle = new Switch(this);
             toggle.setChecked(r.optBoolean("enabled", true));
             toggle.setContentDescription(
                     r.optString("name") + getString(R.string.native_enable_macro_suffix));
-            toggle.setMinimumWidth(ui.dp(56));
-            toggle.setMinimumHeight(ui.dp(48));
+            toggle.setMinimumWidth(ui.dimension(R.dimen.space_56));
+            toggle.setMinimumHeight(ui.dimension(R.dimen.space_48));
             toggle.setThumbTintList(
                     new android.content.res.ColorStateList(
                             new int[][] {new int[] {android.R.attr.state_checked}, new int[] {}},
@@ -407,7 +458,8 @@ public class MainActivity extends Activity {
                         }
                     });
             String numbers = String.join("、", Store.numbers(r));
-            TextView sender = text(card, getString(R.string.native_sender_prefix) + numbers, 14);
+            TextView sender =
+                    text(card, getString(R.string.native_sender_prefix) + numbers, R.dimen.text_14);
             sender.setMaxLines(2);
             sender.setEllipsize(android.text.TextUtils.TruncateAt.END);
             text(
@@ -417,8 +469,8 @@ public class MainActivity extends Activity {
                             : getString(R.string.native_keyword_prefix)
                                     + r.optString("keyword")
                                     + "”",
-                    14);
-            ui.space(card, 8);
+                    R.dimen.text_14);
+            ui.space(card, R.dimen.space_8);
             TextView chip =
                     ui.label(
                             getResources()
@@ -429,19 +481,23 @@ public class MainActivity extends Activity {
                                     + "%  ·  "
                                     + r.optInt("duration")
                                     + getString(R.string.native_duration_suffix),
-                            12,
+                            R.dimen.text_12,
                             ui.onAccent,
                             false);
-            chip.setPadding(ui.dp(12), ui.dp(8), ui.dp(12), ui.dp(8));
-            chip.setBackground(ui.shape(ui.accent, 12));
+            chip.setPadding(
+                    ui.dimension(R.dimen.space_12),
+                    ui.dimension(R.dimen.space_8),
+                    ui.dimension(R.dimen.space_12),
+                    ui.dimension(R.dimen.space_8));
+            chip.setBackground(ui.shape(ui.accent, R.dimen.corner_control));
             card.addView(chip);
-            ui.space(card, 16);
+            ui.space(card, R.dimen.space_16);
             LinearLayout actions = ui.row();
             Button test = ui.button(getString(R.string.test), false, () -> testRule(r));
             actions.addView(test, new LinearLayout.LayoutParams(0, -2, 1));
             Button edit = ui.button(getString(R.string.edit), false, () -> edit(index));
             LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(0, -2, 1);
-            ep.leftMargin = ui.dp(8);
+            ep.leftMargin = ui.dimension(R.dimen.space_8);
             actions.addView(edit, ep);
             Button more =
                     ui.button(
@@ -484,8 +540,9 @@ public class MainActivity extends Activity {
                                             .show());
             more.setContentDescription(
                     getString(R.string.native_more_actions_prefix) + r.optString("name"));
-            LinearLayout.LayoutParams mp = new LinearLayout.LayoutParams(ui.dp(48), -2);
-            mp.leftMargin = ui.dp(8);
+            LinearLayout.LayoutParams mp =
+                    new LinearLayout.LayoutParams(ui.dimension(R.dimen.space_48), -2);
+            mp.leftMargin = ui.dimension(R.dimen.space_8);
             more.setPadding(0, 0, 0, 0);
             actions.addView(more, mp);
             card.addView(actions);
@@ -520,9 +577,9 @@ public class MainActivity extends Activity {
     }
 
     private void renderLogs() {
-        text(root, getString(R.string.execution_logs), 28);
-        text(root, getString(R.string.native_logs_description), 14);
-        ui.space(root, 16);
+        text(root, getString(R.string.execution_logs), R.dimen.text_28);
+        text(root, getString(R.string.native_logs_description), R.dimen.text_14);
+        ui.space(root, R.dimen.space_16);
         LinearLayout actions = ui.row();
         actions.addView(
                 ui.button(getString(R.string.refresh), false, this::render),
@@ -543,27 +600,30 @@ public class MainActivity extends Activity {
                                         .setNegativeButton(getString(R.string.cancel), null)
                                         .show());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1);
-        lp.leftMargin = ui.dp(8);
+        lp.leftMargin = ui.dimension(R.dimen.space_8);
         actions.addView(clear, lp);
         root.addView(actions);
-        ui.space(root, 16);
+        ui.space(root, R.dimen.space_16);
         LinearLayout card = ui.card(root, ui.surface);
         TextView logs =
-                text(card, Store.prefs(this).getString("logs", getString(R.string.logs_empty)), 13);
+                text(
+                        card,
+                        Store.prefs(this).getString("logs", getString(R.string.logs_empty)),
+                        R.dimen.text_13);
         logs.setTextIsSelectable(true);
     }
 
     private void renderSettings() {
-        text(root, getString(R.string.nav_settings), 28);
-        text(root, getString(R.string.settings_description), 14);
-        ui.space(root, 16);
+        text(root, getString(R.string.nav_settings), R.dimen.text_28);
+        text(root, getString(R.string.settings_description), R.dimen.text_14);
+        ui.space(root, R.dimen.space_16);
         LinearLayout permissions = ui.card(root, ui.surface);
-        text(permissions, getString(R.string.permissions_title), 20);
-        text(permissions, getString(R.string.permissions_description), 14);
+        text(permissions, getString(R.string.permissions_title), R.dimen.text_20);
+        text(permissions, getString(R.string.permissions_description), R.dimen.text_14);
         button(permissions, getString(R.string.manage_permissions), this::permissions);
         LinearLayout backup = ui.card(root, ui.surface);
-        text(backup, getString(R.string.backup_title), 20);
-        text(backup, getString(R.string.native_backup_description), 14);
+        text(backup, getString(R.string.backup_title), R.dimen.text_20);
+        text(backup, getString(R.string.native_backup_description), R.dimen.text_14);
         button(
                 backup,
                 getString(R.string.export_macros),
@@ -591,30 +651,39 @@ public class MainActivity extends Activity {
                                         .setType("*/*"),
                                 31));
         LinearLayout diagnose = ui.card(root, ui.surface);
-        text(diagnose, getString(R.string.diagnostics_title), 20);
-        text(diagnose, getString(R.string.native_diagnostics_description), 14);
+        text(diagnose, getString(R.string.diagnostics_title), R.dimen.text_20);
+        text(diagnose, getString(R.string.native_diagnostics_description), R.dimen.text_14);
         button(diagnose, getString(R.string.read_recent_messages), this::recentSmsDiagnostics);
         LinearLayout about = ui.card(root, ui.container);
-        text(about, getString(R.string.privacy_title), 18);
-        text(about, getString(R.string.privacy_description), 14);
-        text(about, getString(R.string.native_about_version, BuildConfig.VERSION_NAME), 12);
+        text(about, getString(R.string.privacy_title), R.dimen.text_18);
+        text(about, getString(R.string.privacy_description), R.dimen.text_14);
+        text(
+                about,
+                getString(R.string.native_about_version, BuildConfig.VERSION_NAME),
+                R.dimen.text_12);
     }
 
     private EditText field(LinearLayout box, String label, String value, int type) {
-        text(box, label, 14);
+        text(box, label, R.dimen.text_14);
         EditText e = new EditText(this);
         e.setInputType(type);
         e.setText(value);
         e.setTextColor(ui.ink);
-        e.setTextSize(16);
+        e.setTextAppearance(R.style.TextAppearance_AutoDroid_Body);
+        e.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, ui.dimension(R.dimen.text_16));
         e.setHintTextColor(ui.muted);
-        e.setPadding(ui.dp(16), ui.dp(14), ui.dp(16), ui.dp(14));
-        android.graphics.drawable.GradientDrawable bg = ui.shape(ui.container, 12);
-        bg.setStroke(ui.dp(1), ui.outline);
+        e.setPadding(
+                ui.dimension(R.dimen.space_16),
+                ui.dimension(R.dimen.space_14),
+                ui.dimension(R.dimen.space_16),
+                ui.dimension(R.dimen.space_14));
+        android.graphics.drawable.GradientDrawable bg =
+                ui.shape(ui.container, R.dimen.corner_control);
+        bg.setStroke(ui.dimension(R.dimen.space_1), ui.outline);
         e.setBackground(bg);
-        e.setMinHeight(ui.dp(56));
+        e.setMinHeight(ui.dimension(R.dimen.space_56));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.bottomMargin = ui.dp(12);
+        lp.bottomMargin = ui.dimension(R.dimen.space_12);
         box.addView(e, lp);
         return e;
     }
@@ -625,15 +694,15 @@ public class MainActivity extends Activity {
         LinearLayout form = column();
         ScrollView scroll = new ScrollView(this);
         scroll.addView(form);
-        text(form, getString(R.string.native_general_section), 22);
+        text(form, getString(R.string.native_general_section), R.dimen.text_22);
         EditText name =
                 field(
                         form,
                         getString(R.string.macro_name),
                         old.optString("name", getString(R.string.default_macro_name)),
                         InputType.TYPE_CLASS_TEXT);
-        text(form, getString(R.string.trigger_conditions), 22);
-        text(form, getString(R.string.native_trigger_hint), 14);
+        text(form, getString(R.string.trigger_conditions), R.dimen.text_22);
+        text(form, getString(R.string.native_trigger_hint), R.dimen.text_14);
         EditText number =
                 field(
                         form,
@@ -649,27 +718,27 @@ public class MainActivity extends Activity {
                         getString(R.string.native_keyword_label),
                         old.optString("keyword"),
                         InputType.TYPE_CLASS_TEXT);
-        text(form, getString(R.string.sound_section), 22);
-        text(form, getString(R.string.native_audio_channel_label), 15);
+        text(form, getString(R.string.sound_section), R.dimen.text_22);
+        text(form, getString(R.string.native_audio_channel_label), R.dimen.text_15);
         Spinner channel = new Spinner(this);
         channel.setAdapter(
                 new ArrayAdapter<>(
                         this,
                         android.R.layout.simple_spinner_dropdown_item,
                         getResources().getStringArray(R.array.audio_channels)));
-        channel.setMinimumHeight(ui.dp(48));
+        channel.setMinimumHeight(ui.dimension(R.dimen.space_48));
         channel.setBackgroundTintList(android.content.res.ColorStateList.valueOf(ui.primary));
         channel.setSelection(Math.max(0, Math.min(3, old.optInt("channel"))));
         form.addView(channel);
-        text(form, getString(R.string.native_volume_label), 15);
+        text(form, getString(R.string.native_volume_label), R.dimen.text_15);
         SeekBar volume = new SeekBar(this);
-        volume.setMinimumHeight(ui.dp(48));
+        volume.setMinimumHeight(ui.dimension(R.dimen.space_48));
         volume.setProgressTintList(android.content.res.ColorStateList.valueOf(ui.primary));
         volume.setThumbTintList(android.content.res.ColorStateList.valueOf(ui.primary));
         volume.setMax(100);
         volume.setProgress(old.optInt("volume", 80));
         form.addView(volume);
-        TextView value = text(form, volume.getProgress() + "%", 15);
+        TextView value = text(form, volume.getProgress() + "%", R.dimen.text_15);
         volume.setOnSeekBarChangeListener(
                 new SeekBar.OnSeekBarChangeListener() {
                     public void onProgressChanged(SeekBar s, int p, boolean user) {
@@ -686,7 +755,7 @@ public class MainActivity extends Activity {
                         getString(R.string.native_duration_label),
                         String.valueOf(old.optInt("duration", 60)),
                         InputType.TYPE_CLASS_NUMBER);
-        text(form, getString(R.string.alert_content), 22);
+        text(form, getString(R.string.alert_content), R.dimen.text_22);
         EditText message =
                 field(
                         form,
@@ -700,7 +769,7 @@ public class MainActivity extends Activity {
                         selectedSound.isEmpty()
                                 ? getString(R.string.default_sound_label)
                                 : getString(R.string.custom_sound_label),
-                        13);
+                        R.dimen.text_13);
         button(
                 form,
                 getString(R.string.native_choose_ringtone),
@@ -898,7 +967,7 @@ public class MainActivity extends Activity {
         LinkedHashSet<String> selected = Store.parseNumbers(target.getText().toString());
         ArrayList<String> visible = new ArrayList<>();
         LinearLayout box = column();
-        text(box, getString(R.string.contacts_selection_hint), 14);
+        text(box, getString(R.string.contacts_selection_hint), R.dimen.text_14);
         EditText search =
                 field(box, getString(R.string.search_contacts), "", InputType.TYPE_CLASS_TEXT);
         ListView list = new ListView(this);
@@ -1159,7 +1228,8 @@ public class MainActivity extends Activity {
                                             readingRecentSms = false;
                                             if (isFinishing() || isDestroyed()) return;
                                             LinearLayout box = column();
-                                            TextView report = text(box, result.text, 15);
+                                            TextView report =
+                                                    text(box, result.text, R.dimen.text_15);
                                             report.setTextIsSelectable(true);
                                             ScrollView scroll = new ScrollView(this);
                                             scroll.addView(box);
@@ -1220,7 +1290,7 @@ public class MainActivity extends Activity {
 
     private void permissions() {
         LinearLayout box = column();
-        text(box, getString(R.string.permission_privacy_description), 16);
+        text(box, getString(R.string.permission_privacy_description), R.dimen.text_16);
         button(
                 box,
                 (granted(Manifest.permission.RECEIVE_SMS) ? "✓ " : "○ ")
@@ -1287,7 +1357,7 @@ public class MainActivity extends Activity {
                                         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                         Uri.parse("package:" + getPackageName())),
                                 20));
-        text(box, getString(R.string.background_limitations), 14);
+        text(box, getString(R.string.background_limitations), R.dimen.text_14);
         ScrollView scroll = new ScrollView(this);
         scroll.addView(box);
         new AlertDialog.Builder(this)

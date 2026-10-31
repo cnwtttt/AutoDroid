@@ -1,0 +1,17 @@
+<resources>
+    <style name="TextAppearance.AutoDroid.Body" parent="android:style/TextAppearance.Material.Body1">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textColor">?attr/uiOnSurface</item>
+    </style>
+    <style name="TextAppearance.AutoDroid.Heading" parent="TextAppearance.AutoDroid.Body">
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Widget.AutoDroid.Button" parent="android:style/Widget.Material.Button">
+        <item name="android:textAppearance">@style/TextAppearance.AutoDroid.Heading</item>
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">@dimen/space_48</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+</resources>

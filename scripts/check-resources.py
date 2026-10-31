@@ -14,6 +14,12 @@ source_files += list((project / "app/src/main/java").rglob("*.kt"))
 source_files += list((project / "native-app/src/main/java").rglob("*.java"))
 for path in source_files:
     text = path.read_text()
+    assert not re.search(r"0x[0-9a-fA-F]{6,8}\b", text), (
+        f"{path.name}: extract colors into theme resources"
+    )
+    assert not re.search(r"\b\d+(?:\.\d+)?\.(?:dp|sp)\b", text), (
+        f"{path.name}: use the shared dimension or typography scale"
+    )
     for key in re.findall(r"(?<!android\.)R\s*\.\s*string\s*\.\s*(\w+)", text):
         assert key in known, f"{path.name}: missing string resource {key}"
     for literal in re.findall(r'"(?:[^"\\]|\\.)*"', text):
@@ -28,3 +34,24 @@ for entry in entries:
                 f"{entry.attrib['name']}: use positional format arguments: {token}"
             )
 print(f"PASS: {len(entries)} strings; references, literals and format placeholders checked")
+
+values = project / "app/src/main/res/values"
+for kind, filename in [("dimen", "dimens.xml"), ("attr", "attrs.xml")]:
+    definitions = ET.parse(values / filename).getroot().findall(kind)
+    names = {entry.attrib["name"] for entry in definitions}
+    assert len(names) == len(definitions), f"Duplicate {kind} resource names"
+    for path in source_files:
+        for name in re.findall(rf"(?<!android\.)R\s*\.\s*{kind}\s*\.\s*(\w+)", path.read_text()):
+            assert name in names, f"{path.name}: missing {kind} resource {name}"
+
+roles = {item.attrib["name"] for item in ET.parse(values / "attrs.xml").getroot()}
+for qualifier in ["values", "values-night"]:
+    folder = values.parent / qualifier
+    colors = {item.attrib["name"] for item in ET.parse(folder / "colors.xml").getroot()}
+    palettes = {item.attrib["name"]: item for item in ET.parse(folder / "palettes.xml").getroot()}
+    for name in ["Palette.X", "Palette.Play"]:
+        items = palettes[name].findall("item")
+        assert {item.attrib["name"] for item in items} == roles, f"{qualifier}/{name}: incomplete palette"
+        for item in items:
+            assert item.text.removeprefix("@color/") in colors, f"{qualifier}/{name}: missing color {item.text}"
+print("PASS: shared dimensions, theme roles and light/dark palettes checked")

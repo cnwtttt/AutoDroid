@@ -2,7 +2,6 @@ package com.autodroid
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -11,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 
 @Composable
@@ -28,10 +26,13 @@ internal fun MacroCard(
     Card(
         Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(AppDimensions.size1, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.medium,
     ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.padding(AppDimensions.size20),
+            verticalArrangement = Arrangement.spacedBy(AppDimensions.size8),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     rule.optString("name"),
@@ -76,18 +77,21 @@ internal fun MacroCard(
                         rule.optInt("volume"),
                         rule.optInt("duration"),
                     ),
-                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    Modifier.padding(
+                        horizontal = AppDimensions.size12,
+                        vertical = AppDimensions.size8,
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppDimensions.size8),
             ) {
                 TextButton(onClick = onTest) {
-                    Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.Default.PlayArrow, null, Modifier.size(AppDimensions.size18))
+                    Spacer(Modifier.width(AppDimensions.size6))
                     Text(activity.getString(R.string.test))
                 }
                 Spacer(Modifier.weight(1f))
@@ -119,7 +123,10 @@ internal fun SettingCard(
     actions: @Composable ColumnScope.() -> Unit,
 ) {
     OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.padding(AppDimensions.size20),
+            verticalArrangement = Arrangement.spacedBy(AppDimensions.size8),
+        ) {
             Text(title, style = MaterialTheme.typography.titleLarge)
             Text(
                 subtitle,

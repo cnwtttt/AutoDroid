@@ -2,7 +2,6 @@ package com.autodroid
 
 import android.provider.Settings
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -14,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 
 /** Compose owns presentation; SMS monitoring and execution remain in the service. */
@@ -27,15 +25,15 @@ class ComposeHost(private val activity: MainActivity) {
 
     fun install() {
         activity.setContent {
-            val dark = isSystemInDarkTheme()
             var colorStyle by rememberSaveable { mutableStateOf(ColorStyle.read(activity)) }
+            val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             val colors =
-                if (colorStyle == ColorStyle.X) {
-                    if (dark) XDarkColors else XLightColors
-                } else {
-                    if (dark) PlayDarkColors else PlayLightColors
-                }
-            MaterialTheme(colorScheme = colors) {
+                remember(colorStyle, configuration) { appColorScheme(activity, colorStyle) }
+            MaterialTheme(
+                colorScheme = colors,
+                shapes = appShapes(),
+                typography = appTypography(),
+            ) {
                 App(revision, colorStyle) { style ->
                     colorStyle = style
                     Store.prefs(activity)
@@ -78,7 +76,7 @@ class ComposeHost(private val activity: MainActivity) {
                         SuggestionChip(
                             onClick = { page = 2 },
                             label = { Text(activity.getString(R.string.local_only_badge)) },
-                            modifier = Modifier.padding(end = 16.dp),
+                            modifier = Modifier.padding(end = AppDimensions.size16),
                         )
                     },
                 )
@@ -86,7 +84,7 @@ class ComposeHost(private val activity: MainActivity) {
             bottomBar = {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    tonalElevation = 0.dp,
+                    tonalElevation = AppDimensions.size0,
                 ) {
                     navLabels.forEachIndexed { index, title ->
                         NavigationBarItem(

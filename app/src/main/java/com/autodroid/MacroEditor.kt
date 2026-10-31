@@ -5,7 +5,6 @@ import android.text.TextWatcher
 import android.widget.EditText
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,7 +15,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.json.JSONArray
@@ -80,12 +78,16 @@ internal fun MacroEditor(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp).fillMaxHeight(0.94f).imePadding(),
-            shape = RoundedCornerShape(28.dp),
+            Modifier.fillMaxWidth()
+                .padding(horizontal = AppDimensions.size12)
+                .fillMaxHeight(0.94f)
+                .imePadding(),
+            shape = MaterialTheme.shapes.extraLarge,
         ) {
             Column {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = AppDimensions.size12, vertical = AppDimensions.size8),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onDismiss) {
@@ -132,8 +134,10 @@ internal fun MacroEditor(
                 }
                 HorizontalDivider()
                 Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Modifier.weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(AppDimensions.size20),
+                    verticalArrangement = Arrangement.spacedBy(AppDimensions.size16),
                 ) {
                     if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
                     OutlinedTextField(
@@ -229,7 +233,7 @@ internal fun MacroEditor(
                         else activity.getString(R.string.custom_sound_label),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.size8)) {
                         OutlinedButton(onClick = { activity.composeSound(false) }) {
                             Text(activity.getString(R.string.system_ringtone))
                         }

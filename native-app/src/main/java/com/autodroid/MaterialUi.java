@@ -2,7 +2,6 @@ package com.autodroid;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.content.res.Configuration;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.view.*;
@@ -23,45 +22,42 @@ final class MaterialUi {
             onAccent;
 
     MaterialUi(Context context) {
-        this.context = context;
-        boolean dark =
-                (context.getResources().getConfiguration().uiMode
-                                & Configuration.UI_MODE_NIGHT_MASK)
-                        == Configuration.UI_MODE_NIGHT_YES;
-        background = dark ? 0xFF111418 : 0xFFF8F9FF;
-        surface = dark ? 0xFF1B2028 : 0xFFFFFFFF;
-        container = dark ? 0xFF252B35 : 0xFFEEF1F8;
-        primary = dark ? 0xFFADC6FF : 0xFF365E9D;
-        onPrimary = dark ? 0xFF002F65 : 0xFFFFFFFF;
-        ink = dark ? 0xFFE2E7F0 : 0xFF191C22;
-        muted = dark ? 0xFFBFC6D3 : 0xFF565F70;
-        outline = dark ? 0xFF414957 : 0xFFDCE1EB;
-        accent = dark ? 0xFF263F62 : 0xFFDCE8FF;
-        onAccent = dark ? 0xFFDCE8FF : 0xFF163B70;
+        this.context = new android.view.ContextThemeWrapper(context, R.style.Palette_Native);
+        background = UiTheme.color(this.context, R.attr.uiBackground);
+        surface = UiTheme.color(this.context, R.attr.uiSurface);
+        container = UiTheme.color(this.context, R.attr.uiSurfaceContainer);
+        primary = UiTheme.color(this.context, R.attr.uiPrimary);
+        onPrimary = UiTheme.color(this.context, R.attr.uiOnPrimary);
+        ink = UiTheme.color(this.context, R.attr.uiOnSurface);
+        muted = UiTheme.color(this.context, R.attr.uiOnSurfaceVariant);
+        outline = UiTheme.color(this.context, R.attr.uiOutlineVariant);
+        accent = UiTheme.color(this.context, R.attr.uiPrimaryContainer);
+        onAccent = UiTheme.color(this.context, R.attr.uiOnPrimaryContainer);
     }
 
-    int dp(float value) {
-        return Math.round(value * context.getResources().getDisplayMetrics().density);
+    int dimension(int resource) {
+        return UiTheme.dimension(context, resource);
     }
 
     GradientDrawable shape(int color, int radius) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
-        d.setCornerRadius(dp(radius));
+        d.setCornerRadius(dimension(radius));
         return d;
     }
 
     android.graphics.drawable.Drawable ripple(int color, int radius) {
         return new RippleDrawable(
-                ColorStateList.valueOf(0x226080B0),
+                ColorStateList.valueOf(UiTheme.color(this.context, R.attr.uiRipple)),
                 shape(color, radius),
-                shape(0xFFFFFFFF, radius));
+                shape(context.getColor(android.R.color.white), radius));
     }
 
     LinearLayout column(int padding) {
         LinearLayout l = new LinearLayout(context);
         l.setOrientation(LinearLayout.VERTICAL);
-        l.setPadding(dp(padding), dp(padding), dp(padding), dp(padding));
+        l.setPadding(
+                dimension(padding), dimension(padding), dimension(padding), dimension(padding));
         return l;
     }
 
@@ -75,39 +71,40 @@ final class MaterialUi {
     TextView label(String text, int size, int color, boolean bold) {
         TextView v = new TextView(context);
         v.setText(text);
-        v.setTextSize(size);
+        v.setTextAppearance(
+                bold
+                        ? R.style.TextAppearance_AutoDroid_Heading
+                        : R.style.TextAppearance_AutoDroid_Body);
+        v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, dimension(size));
         v.setTextColor(color);
         v.setFontFeatureSettings("kern");
-        v.setTypeface(Typeface.create("sans-serif", bold ? Typeface.BOLD : Typeface.NORMAL));
-        v.setLineSpacing(dp(3), 1);
+        v.setLineSpacing(dimension(R.dimen.text_line_extra), 1);
         return v;
     }
 
     Button button(String text, boolean filled, Runnable action) {
-        Button b = new Button(context);
+        Button b = new Button(context, null, 0, R.style.Widget_AutoDroid_Button);
         b.setText(text);
-        b.setTextSize(14);
-        b.setAllCaps(false);
-        b.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         b.setTextColor(filled ? onPrimary : primary);
-        b.setBackground(ripple(filled ? primary : container, 24));
-        b.setMinHeight(dp(48));
-        b.setMinimumHeight(dp(48));
-        b.setPadding(dp(20), dp(10), dp(20), dp(10));
-        b.setStateListAnimator(null);
+        b.setBackground(ripple(filled ? primary : container, R.dimen.corner_button));
+        b.setPadding(
+                dimension(R.dimen.space_20),
+                dimension(R.dimen.space_10),
+                dimension(R.dimen.space_20),
+                dimension(R.dimen.space_10));
         b.setOnClickListener(v -> action.run());
         return b;
     }
 
     void space(LinearLayout parent, int height) {
-        parent.addView(new View(context), new LinearLayout.LayoutParams(1, dp(height)));
+        parent.addView(new View(context), new LinearLayout.LayoutParams(1, dimension(height)));
     }
 
     LinearLayout card(LinearLayout parent, int color) {
-        LinearLayout card = column(20);
-        card.setBackground(shape(color, 24));
+        LinearLayout card = column(R.dimen.space_20);
+        card.setBackground(shape(color, R.dimen.corner_button));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.bottomMargin = dp(16);
+        lp.bottomMargin = dimension(R.dimen.space_16);
         parent.addView(card, lp);
         return card;
     }

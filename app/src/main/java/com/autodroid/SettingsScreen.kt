@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @Composable
 internal fun SettingsScreen(
@@ -16,11 +15,11 @@ internal fun SettingsScreen(
     onColorStyle: (ColorStyle) -> Unit,
 ) {
     Column(
-        Modifier.widthIn(max = 680.dp)
+        Modifier.widthIn(max = AppDimensions.size680)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(AppDimensions.size20),
+        verticalArrangement = Arrangement.spacedBy(AppDimensions.size16),
     ) {
         Text(
             activity.getString(R.string.nav_settings),
@@ -34,7 +33,7 @@ internal fun SettingsScreen(
             activity.getString(R.string.appearance_title),
             activity.getString(R.string.appearance_description),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.size12)) {
                 FilterChip(
                     selected = colorStyle == ColorStyle.X,
                     onClick = { onColorStyle(ColorStyle.X) },
@@ -59,7 +58,7 @@ internal fun SettingsScreen(
             activity.getString(R.string.backup_title),
             activity.getString(R.string.backup_description),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.size8)) {
                 FilledTonalButton(onClick = { activity.composeBackup(true) }) {
                     Text(activity.getString(R.string.export_macros))
                 }

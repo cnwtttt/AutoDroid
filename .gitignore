@@ -1,5 +1,6 @@
 # Gradle, Android Studio and machine-local configuration
 .gradle/
+.kotlin/
 .idea/
 *.iml
 local.properties

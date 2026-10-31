@@ -1,28 +1,32 @@
 <resources>
-    <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="AppTheme" parent="Palette.X">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#0F1419</item>
-        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="android:colorAccent">@color/x_primary</item>
+        <item name="android:colorBackground">@color/x_background</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:alertDialogTheme">@style/AppDialog</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="android:windowBackground">@color/x_background</item>
     </style>
     <style name="AppDialog" parent="android:style/Theme.Material.Light.Dialog.Alert">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#0F1419</item>
-        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="android:colorAccent">@color/x_primary</item>
+        <item name="android:colorBackground">@color/x_surface_container_low</item>
         <item name="android:windowBackground">@drawable/dialog_surface</item>
     </style>
-    <style name="AppTheme.Play" parent="AppTheme">
-        <item name="android:colorAccent">#0B57D0</item>
-        <item name="android:colorBackground">#FFFFFF</item>
-        <item name="android:windowBackground">#FFFFFF</item>
+    <style name="AppTheme.Play" parent="Palette.Play">
+        <item name="android:colorAccent">@color/play_primary</item>
+        <item name="android:colorBackground">@color/play_background</item>
+        <item name="android:windowBackground">@color/play_background</item>
         <item name="android:alertDialogTheme">@style/AppDialog.Play</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
     </style>
     <style name="AppDialog.Play" parent="AppDialog">
-        <item name="android:colorAccent">#0B57D0</item>
-        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="android:colorAccent">@color/play_primary</item>
+        <item name="android:colorBackground">@color/play_surface_container_low</item>
     </style>
 </resources>

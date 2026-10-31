@@ -1,0 +1,90 @@
+<resources>
+    <style name="Palette.X" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="uiPrimary">@color/x_primary</item>
+        <item name="uiOnPrimary">@color/x_on_primary</item>
+        <item name="uiPrimaryContainer">@color/x_primary_container</item>
+        <item name="uiOnPrimaryContainer">@color/x_on_primary_container</item>
+        <item name="uiSecondary">@color/x_secondary</item>
+        <item name="uiOnSecondary">@color/x_on_secondary</item>
+        <item name="uiSecondaryContainer">@color/x_secondary_container</item>
+        <item name="uiOnSecondaryContainer">@color/x_on_secondary_container</item>
+        <item name="uiTertiary">@color/x_tertiary</item>
+        <item name="uiOnTertiary">@color/x_on_tertiary</item>
+        <item name="uiTertiaryContainer">@color/x_tertiary_container</item>
+        <item name="uiOnTertiaryContainer">@color/x_on_tertiary_container</item>
+        <item name="uiBackground">@color/x_background</item>
+        <item name="uiOnBackground">@color/x_on_background</item>
+        <item name="uiSurface">@color/x_surface</item>
+        <item name="uiOnSurface">@color/x_on_surface</item>
+        <item name="uiSurfaceVariant">@color/x_surface_variant</item>
+        <item name="uiOnSurfaceVariant">@color/x_on_surface_variant</item>
+        <item name="uiSurfaceDim">@color/x_surface_dim</item>
+        <item name="uiSurfaceBright">@color/x_surface_bright</item>
+        <item name="uiSurfaceContainerLowest">@color/x_surface_container_lowest</item>
+        <item name="uiSurfaceContainerLow">@color/x_surface_container_low</item>
+        <item name="uiSurfaceContainer">@color/x_surface_container</item>
+        <item name="uiSurfaceContainerHigh">@color/x_surface_container_high</item>
+        <item name="uiSurfaceContainerHighest">@color/x_surface_container_highest</item>
+        <item name="uiSurfaceTint">@color/x_surface_tint</item>
+        <item name="uiOutline">@color/x_outline</item>
+        <item name="uiOutlineVariant">@color/x_outline_variant</item>
+        <item name="uiInverseSurface">@color/x_inverse_surface</item>
+        <item name="uiInverseOnSurface">@color/x_inverse_on_surface</item>
+        <item name="uiInversePrimary">@color/x_inverse_primary</item>
+        <item name="uiError">@color/x_error</item>
+        <item name="uiOnError">@color/x_on_error</item>
+        <item name="uiErrorContainer">@color/x_error_container</item>
+        <item name="uiOnErrorContainer">@color/x_on_error_container</item>
+        <item name="uiRipple">@color/x_ripple</item>
+    </style>
+    <style name="Palette.Play" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="uiPrimary">@color/play_primary</item>
+        <item name="uiOnPrimary">@color/play_on_primary</item>
+        <item name="uiPrimaryContainer">@color/play_primary_container</item>
+        <item name="uiOnPrimaryContainer">@color/play_on_primary_container</item>
+        <item name="uiSecondary">@color/play_secondary</item>
+        <item name="uiOnSecondary">@color/play_on_secondary</item>
+        <item name="uiSecondaryContainer">@color/play_secondary_container</item>
+        <item name="uiOnSecondaryContainer">@color/play_on_secondary_container</item>
+        <item name="uiTertiary">@color/play_tertiary</item>
+        <item name="uiOnTertiary">@color/play_on_tertiary</item>
+        <item name="uiTertiaryContainer">@color/play_tertiary_container</item>
+        <item name="uiOnTertiaryContainer">@color/play_on_tertiary_container</item>
+        <item name="uiBackground">@color/play_background</item>
+        <item name="uiOnBackground">@color/play_on_background</item>
+        <item name="uiSurface">@color/play_surface</item>
+        <item name="uiOnSurface">@color/play_on_surface</item>
+        <item name="uiSurfaceVariant">@color/play_surface_variant</item>
+        <item name="uiOnSurfaceVariant">@color/play_on_surface_variant</item>
+        <item name="uiSurfaceDim">@color/play_surface_dim</item>
+        <item name="uiSurfaceBright">@color/play_surface_bright</item>
+        <item name="uiSurfaceContainerLowest">@color/play_surface_container_lowest</item>
+        <item name="uiSurfaceContainerLow">@color/play_surface_container_low</item>
+        <item name="uiSurfaceContainer">@color/play_surface_container</item>
+        <item name="uiSurfaceContainerHigh">@color/play_surface_container_high</item>
+        <item name="uiSurfaceContainerHighest">@color/play_surface_container_highest</item>
+        <item name="uiSurfaceTint">@color/play_surface_tint</item>
+        <item name="uiOutline">@color/play_outline</item>
+        <item name="uiOutlineVariant">@color/play_outline_variant</item>
+        <item name="uiInverseSurface">@color/play_inverse_surface</item>
+        <item name="uiInverseOnSurface">@color/play_inverse_on_surface</item>
+        <item name="uiInversePrimary">@color/play_inverse_primary</item>
+        <item name="uiError">@color/play_error</item>
+        <item name="uiOnError">@color/play_on_error</item>
+        <item name="uiErrorContainer">@color/play_error_container</item>
+        <item name="uiOnErrorContainer">@color/play_on_error_container</item>
+        <item name="uiRipple">@color/play_ripple</item>
+    </style>
+    <style name="Palette.Native" parent="Palette.Play">
+        <item name="uiBackground">@color/native_background</item>
+        <item name="uiSurface">@color/native_surface</item>
+        <item name="uiSurfaceContainer">@color/native_container</item>
+        <item name="uiPrimary">@color/native_primary</item>
+        <item name="uiOnPrimary">@color/native_onprimary</item>
+        <item name="uiOnSurface">@color/native_ink</item>
+        <item name="uiOnSurfaceVariant">@color/native_muted</item>
+        <item name="uiOutlineVariant">@color/native_outline</item>
+        <item name="uiPrimaryContainer">@color/native_accent</item>
+        <item name="uiOnPrimaryContainer">@color/native_onaccent</item>
+    </style>
+</resources>

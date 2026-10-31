@@ -106,12 +106,21 @@ public class MainActivity extends androidx.activity.ComponentActivity {
     }
 
     private LinearLayout column() {
-        return ui.column(20);
+        return ui.column(R.dimen.space_20);
     }
 
     private TextView text(LinearLayout parent, String value, int size) {
-        TextView t = ui.label(value, size, size >= 20 ? ui.ink : ui.muted, size >= 20);
-        t.setPadding(0, ui.dp(6), 0, ui.dp(6));
+        TextView t =
+                ui.label(
+                        value,
+                        size,
+                        getResources().getDimension(size)
+                                        >= getResources().getDimension(R.dimen.text_20)
+                                ? ui.ink
+                                : ui.muted,
+                        getResources().getDimension(size)
+                                >= getResources().getDimension(R.dimen.text_20));
+        t.setPadding(0, ui.dimension(R.dimen.space_6), 0, ui.dimension(R.dimen.space_6));
         parent.addView(t);
         return t;
     }
@@ -119,7 +128,7 @@ public class MainActivity extends androidx.activity.ComponentActivity {
     private void button(LinearLayout parent, String label, Runnable action) {
         Button b = ui.button(label, false, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.topMargin = ui.dp(8);
+        lp.topMargin = ui.dimension(R.dimen.space_8);
         parent.addView(b, lp);
     }
 
@@ -277,20 +286,26 @@ public class MainActivity extends androidx.activity.ComponentActivity {
     }
 
     private EditText field(LinearLayout box, String label, String value, int type) {
-        text(box, label, 14);
+        text(box, label, R.dimen.text_14);
         EditText e = new EditText(this);
         e.setInputType(type);
         e.setText(value);
         e.setTextColor(ui.ink);
-        e.setTextSize(16);
+        e.setTextAppearance(R.style.TextAppearance_AutoDroid_Body);
+        e.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, ui.dimension(R.dimen.text_16));
         e.setHintTextColor(ui.muted);
-        e.setPadding(ui.dp(16), ui.dp(14), ui.dp(16), ui.dp(14));
-        android.graphics.drawable.GradientDrawable bg = ui.shape(ui.container, 12);
-        bg.setStroke(ui.dp(1), ui.outline);
+        e.setPadding(
+                ui.dimension(R.dimen.space_16),
+                ui.dimension(R.dimen.space_14),
+                ui.dimension(R.dimen.space_16),
+                ui.dimension(R.dimen.space_14));
+        android.graphics.drawable.GradientDrawable bg =
+                ui.shape(ui.container, R.dimen.corner_control);
+        bg.setStroke(ui.dimension(R.dimen.space_1), ui.outline);
         e.setBackground(bg);
-        e.setMinHeight(ui.dp(56));
+        e.setMinHeight(ui.dimension(R.dimen.space_56));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.bottomMargin = ui.dp(12);
+        lp.bottomMargin = ui.dimension(R.dimen.space_12);
         box.addView(e, lp);
         return e;
     }
@@ -378,7 +393,7 @@ public class MainActivity extends androidx.activity.ComponentActivity {
         LinkedHashSet<String> selected = Store.parseNumbers(target.getText().toString());
         ArrayList<String> visible = new ArrayList<>();
         LinearLayout box = column();
-        text(box, getString(R.string.contacts_selection_hint), 14);
+        text(box, getString(R.string.contacts_selection_hint), R.dimen.text_14);
         EditText search =
                 field(box, getString(R.string.search_contacts), "", InputType.TYPE_CLASS_TEXT);
         ListView list = new ListView(this);
@@ -639,7 +654,8 @@ public class MainActivity extends androidx.activity.ComponentActivity {
                                             readingRecentSms = false;
                                             if (isFinishing() || isDestroyed()) return;
                                             LinearLayout box = column();
-                                            TextView report = text(box, result.text, 15);
+                                            TextView report =
+                                                    text(box, result.text, R.dimen.text_15);
                                             report.setTextIsSelectable(true);
                                             ScrollView scroll = new ScrollView(this);
                                             scroll.addView(box);
@@ -716,7 +732,7 @@ public class MainActivity extends androidx.activity.ComponentActivity {
 
     private void permissions() {
         LinearLayout box = column();
-        text(box, getString(R.string.permission_privacy_description), 16);
+        text(box, getString(R.string.permission_privacy_description), R.dimen.text_16);
         button(
                 box,
                 permissionLabel(
@@ -782,7 +798,7 @@ public class MainActivity extends androidx.activity.ComponentActivity {
                                         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                                         Uri.parse("package:" + getPackageName())),
                                 20));
-        text(box, getString(R.string.background_limitations), 14);
+        text(box, getString(R.string.background_limitations), R.dimen.text_14);
         ScrollView scroll = new ScrollView(this);
         scroll.addView(box);
         new AlertDialog.Builder(this)

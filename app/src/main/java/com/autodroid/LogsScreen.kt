@@ -8,14 +8,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LogsScreen(activity: MainActivity, generation: Int, onRefresh: () -> Unit) {
     Column(
-        Modifier.widthIn(max = 680.dp).fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier.widthIn(max = AppDimensions.size680)
+            .fillMaxSize()
+            .padding(horizontal = AppDimensions.size20),
+        verticalArrangement = Arrangement.spacedBy(AppDimensions.size16),
     ) {
         Text(
             activity.getString(R.string.execution_logs),
@@ -26,7 +27,7 @@ internal fun LogsScreen(activity: MainActivity, generation: Int, onRefresh: () -
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         var clear by remember { mutableStateOf(false) }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.size12)) {
             FilledTonalButton(onClick = onRefresh) { Text(activity.getString(R.string.refresh)) }
             TextButton(onClick = { clear = true }) { Text(activity.getString(R.string.clear_logs)) }
         }
@@ -60,12 +61,14 @@ internal fun LogsScreen(activity: MainActivity, generation: Int, onRefresh: () -
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.weight(1f).padding(bottom = 16.dp),
+            modifier = Modifier.weight(1f).padding(bottom = AppDimensions.size16),
         ) {
             SelectionContainer {
                 Text(
                     logs,
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+                    Modifier.fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(AppDimensions.size20),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

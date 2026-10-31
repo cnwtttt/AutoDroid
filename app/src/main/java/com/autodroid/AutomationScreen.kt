@@ -8,14 +8,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,12 +28,18 @@ internal fun AutomationScreen(
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
-        Modifier.widthIn(max = 680.dp).fillMaxWidth(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier.widthIn(max = AppDimensions.size680).fillMaxWidth(),
+        contentPadding =
+            PaddingValues(
+                start = AppDimensions.size20,
+                end = AppDimensions.size20,
+                top = AppDimensions.size8,
+                bottom = AppDimensions.size100,
+            ),
+        verticalArrangement = Arrangement.spacedBy(AppDimensions.size16),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AppDimensions.size8)) {
                 Text(
                     activity.getString(R.string.home_title),
                     style = MaterialTheme.typography.headlineMedium,
@@ -52,13 +56,17 @@ internal fun AutomationScreen(
                     CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                     ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                shape = RoundedCornerShape(20.dp),
+                border =
+                    BorderStroke(AppDimensions.size1, MaterialTheme.colorScheme.outlineVariant),
+                shape = MaterialTheme.shapes.large,
             ) {
-                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    Modifier.padding(AppDimensions.size24),
+                    verticalArrangement = Arrangement.spacedBy(AppDimensions.size12),
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(AppDimensions.size12),
                     ) {
                         Icon(
                             Icons.Default.Notifications,
@@ -98,8 +106,8 @@ internal fun AutomationScreen(
             item {
                 OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        Modifier.padding(AppDimensions.size20),
+                        verticalArrangement = Arrangement.spacedBy(AppDimensions.size8),
                     ) {
                         Text(
                             activity.getString(R.string.complete_permissions),
@@ -140,14 +148,14 @@ internal fun AutomationScreen(
             item {
                 OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(
-                        Modifier.fillMaxWidth().padding(28.dp),
+                        Modifier.fillMaxWidth().padding(AppDimensions.size28),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(AppDimensions.size12),
                     ) {
                         Icon(
                             Icons.Default.Add,
                             null,
-                            Modifier.size(40.dp),
+                            Modifier.size(AppDimensions.size40),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                         Text(
