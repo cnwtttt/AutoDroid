@@ -56,3 +56,6 @@ captures/
 .DS_Store
 *~
 *.swp
+
+# Exported macro backups contain contact numbers and rule content.
+AutoDroid-macros*.json

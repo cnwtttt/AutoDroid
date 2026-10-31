@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
         render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.6 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.3.7 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
@@ -78,6 +78,9 @@ public class MainActivity extends Activity {
         });
         button(root, "权限与后台设置", this::permissions);
         button(root, "＋ 新建短信宏", () -> edit(-1));
+        button(root,"导出宏备份", () -> launch(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+            .setType("application/json").putExtra(Intent.EXTRA_TITLE,"AutoDroid-macros-"+new java.text.SimpleDateFormat("yyyyMMdd-HHmmss",Locale.ROOT).format(new Date())+".json"),30));
+        button(root,"导入宏备份", () -> launch(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),31));
         JSONArray rules = Store.rules(this);
         if (rules.length() == 0) text(root, "还没有宏。先新建一条，再点手动测试。", 17);
         for (int i = 0; i < rules.length(); i++) {
@@ -227,12 +230,63 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);
         if (result != RESULT_OK || data == null) return;
+        if ((request == 30 || request == 31) && data.getData() != null) { backupFile(request,data.getData()); return; }
         Uri uri = request == 10 ? data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI) : data.getData();
         if ((request == 10 || request == 11) && uri != null) {
             if (request == 11) try { getContentResolver().takePersistableUriPermission(uri,data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION); }
             catch (SecurityException e) { toast("音源访问未能持久保存，请重新选择文件"); return; }
             selectedSound = uri.toString(); if (soundLabel != null) soundLabel.setText("音源："+selectedSound);
         }
+    }
+    private void backupFile(int request, Uri uri) {
+        String snapshot = Store.rules(this).toString();
+        toast(request == 30 ? "正在导出宏…" : "正在读取备份…");
+        new Thread(() -> {
+            try {
+                if (request == 30) {
+                    byte[] bytes = MacroBackup.exportRules(new JSONArray(snapshot)).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    if (bytes.length > MacroBackup.MAX_BYTES) throw new java.io.IOException("备份超过1MB限制");
+                    try (java.io.OutputStream out = getContentResolver().openOutputStream(uri,"wt")) {
+                        if (out == null) throw new java.io.IOException("无法打开目标文件");
+                        out.write(bytes); out.flush();
+                    }
+                    runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) toast("宏备份已导出，请确认文件已保存再卸载应用"); });
+                } else {
+                    java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+                    try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+                        if (in == null) throw new java.io.IOException("无法打开备份文件");
+                        byte[] buffer = new byte[8192]; int count;
+                        while ((count = in.read(buffer)) != -1) {
+                            if (bytes.size()+count > MacroBackup.MAX_BYTES) throw new java.io.IOException("备份超过1MB限制");
+                            bytes.write(buffer,0,count);
+                        }
+                    }
+                    JSONArray imported = MacroBackup.importRules(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+                    runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) confirmImport(imported); });
+                }
+            } catch (Exception e) {
+                runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) toast("备份操作失败："+e.getMessage()); });
+            }
+        },"macro-backup").start();
+    }
+    private void confirmImport(JSONArray imported) {
+        new AlertDialog.Builder(this).setTitle("恢复 "+imported.length()+" 条宏")
+            .setMessage("追加会保留现有宏，重复导入也会追加。替换会覆盖全部现有宏。恢复后监听将关闭，请检查号码和音源，再手动开启。音频文件和系统权限不会随备份恢复。")
+            .setPositiveButton("追加", (d,w) -> applyImport(imported,false))
+            .setNeutralButton("替换全部", (d,w) -> new AlertDialog.Builder(this).setTitle("确认替换全部宏")
+                .setMessage("将用备份中的 "+imported.length()+" 条宏替换当前全部宏，请先确认已导出当前配置。")
+                .setPositiveButton("确认替换", (dialog,which) -> applyImport(imported,true)).setNegativeButton("取消",null).show())
+            .setNegativeButton("取消",null).show();
+    }
+    private void applyImport(JSONArray imported, boolean replace) {
+        JSONArray combined = replace ? new JSONArray() : Store.rules(this);
+        if (combined.length()+imported.length()>500) { toast("恢复后宏数量不能超过500"); return; }
+        for (int i=0;i<imported.length();i++) combined.put(imported.optJSONObject(i));
+        boolean saved = Store.prefs(this).edit().putString("rules",combined.toString()).putBoolean("monitor",false).commit();
+        if (!saved) { toast("保存失败，请检查存储空间"); return; }
+        try { startService(new Intent(this,MacroService.class).setAction("STOP")); }
+        catch (RuntimeException e) { Store.log(this,"恢复后停止服务失败："+e.getMessage()); }
+        render(); toast("已恢复 "+imported.length()+" 条宏；请重新检查权限和音源后开启监听");
     }
     private void permissions() {
         LinearLayout box = column();
