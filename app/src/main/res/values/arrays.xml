@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="audio_channels">
+        <item>@string/audio_alarm</item>
+        <item>@string/audio_media</item>
+        <item>@string/audio_ringtone</item>
+        <item>@string/audio_notification</item>
+    </string-array>
+</resources>

@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Only the native UI is distinct. Sync shared Java sources into an ignored build
+// directory so AGP never includes the Compose activity or Kotlin presentation.
+def sharedJava = layout.buildDirectory.dir('generated/sharedJava')
+def prepareSharedJava = tasks.register('prepareSharedJava', Sync) {
+    from(rootProject.file('app/src/main/java')) {
+        include '**/*.java'
+        exclude '**/MainActivity.java', '**/DialogUi.java'
+    }
+    into(sharedJava)
+}
+
+android {
+    namespace 'com.autodroid'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.autodroid'
+        minSdk 26
+        targetSdk 36
+        versionCode rootProject.appVersionCode
+        versionName "${rootProject.appVersionName}-native"
+    }
+    buildFeatures {
+        buildConfig true
+    }
+    sourceSets {
+        main {
+            manifest.srcFile '../app/src/main/AndroidManifest.xml'
+            java.srcDirs 'src/main/java', sharedJava
+            res.srcDirs '../app/src/main/res'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    signingConfigs {
+        existingDebug {
+            storeFile rootProject.file('build/offline/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.existingDebug
+        }
+        release {
+            signingConfig signingConfigs.existingDebug
+            minifyEnabled false
+        }
+    }
+}
+tasks.named('preBuild').configure {
+    dependsOn(prepareSharedJava)
+}

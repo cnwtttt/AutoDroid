@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_version">AutoDroid %1$s</string>
+    <string name="alert_channel_description" formatted="false">宏执行时的重要警告通知；可在此设置横幅、声音和锁屏显示</string>
+    <string name="alert_channel_name" formatted="false">重要宏警告</string>
+    <string name="alert_content" formatted="false">警告内容</string>
+    <string name="alert_message" formatted="false">警告文字</string>
+    <string name="alert_notification_settings" formatted="false">重要警告通知设置（横幅 / 声音 / 锁屏）</string>
+    <string name="app_name" formatted="false">AutoDroid</string>
+    <string name="app_permissions" formatted="false">应用权限设置</string>
+    <string name="app_settings" formatted="false">应用设置 / 权限被拒绝后手动开启</string>
+    <string name="appearance_description" formatted="false">两套中性色调，均跟随系统切换深浅色。</string>
+    <string name="appearance_title" formatted="false">外观配色</string>
+    <string name="append" formatted="false">追加</string>
+    <string name="audio_alarm" formatted="false">闹钟</string>
+    <string name="audio_channel" formatted="false">音频通道</string>
+    <string name="audio_focus_denied" formatted="false">系统未授予音频焦点</string>
+    <string name="audio_media" formatted="false">媒体</string>
+    <string name="audio_notification" formatted="false">通知</string>
+    <string name="audio_ringtone" formatted="false">铃声</string>
+    <string name="audio_summary">%1$s · %2$d%% · %3$d 秒</string>
+    <string name="background_limitations" formatted="false">部分手机还需手动允许自启动和后台运行。强行停止后需重新打开应用。锁屏、省电、勿扰、通话及系统敏感短信限制可能影响触发、声音或弹窗。音量修改会保留，不会自动恢复。</string>
+    <string name="backup_description" formatted="false">换机或重装前，先保存自动化配置。</string>
+    <string name="backup_exported" formatted="false">宏备份已导出，请确认文件已保存再卸载应用</string>
+    <string name="backup_failed">备份操作失败：%1$s</string>
+    <string name="backup_input_unavailable" formatted="false">无法打开备份文件</string>
+    <string name="backup_output_unavailable" formatted="false">无法打开目标文件</string>
+    <string name="backup_size_exceeded" formatted="false">备份超过1MB限制</string>
+    <string name="backup_title" formatted="false">宏备份</string>
+    <string name="battery_settings" formatted="false">电池优化设置</string>
+    <string name="cancel" formatted="false">取消</string>
+    <string name="cancel_editing" formatted="false">取消编辑</string>
+    <string name="check_permissions" formatted="false">检查权限</string>
+    <string name="choose_contacts" formatted="false">从通讯录选择</string>
+    <string name="choose_contacts_title" formatted="false">多选联系人号码</string>
+    <string name="clear" formatted="false">清空</string>
+    <string name="clear_logs" formatted="false">清空日志</string>
+    <string name="clear_logs_description" formatted="false">清空后无法恢复，宏配置不受影响。</string>
+    <string name="clear_logs_title" formatted="false">清空执行日志？</string>
+    <string name="close" formatted="false">关闭</string>
+    <string name="complete_permissions" formatted="false">完善提醒权限</string>
+    <string name="complete_permissions_description" formatted="false">检查短信、通知和悬浮窗授权。</string>
+    <string name="confirm_and_stop" formatted="false">确认并停止</string>
+    <string name="confirm_replace" formatted="false">确认替换</string>
+    <string name="confirm_stop_audio" formatted="false">确认 · 停止声音</string>
+    <string name="contacts_empty" formatted="false">没有可用的联系人号码，请手动输入</string>
+    <string name="contacts_read_failed">读取联系人失败，可手动输入号码：%1$s</string>
+    <string name="contacts_selection_hint" formatted="false">联系人有多个号码时可分别勾选；已有手填号码会保留，可在编辑框删除。</string>
+    <string name="continue_permission" formatted="false">继续授权</string>
+    <string name="create_macro" formatted="false">新建宏</string>
+    <string name="create_sms_macro" formatted="false">创建短信宏</string>
+    <string name="custom_sound_label" formatted="false">音源：已选择自定义音源</string>
+    <string name="default_alert_message" formatted="false">收到匹配短信，请及时处理</string>
+    <string name="default_macro_name" formatted="false">短信警告</string>
+    <string name="default_sound_label" formatted="false">音源：默认系统闹钟</string>
+    <string name="delete" formatted="false">删除</string>
+    <string name="delete_macro" formatted="false">删除宏</string>
+    <string name="delete_macro_description" formatted="false">删除后无法撤销，可先在设置中导出备份。</string>
+    <string name="delete_macro_title" formatted="false">删除这条宏？</string>
+    <string name="diagnostics_description" formatted="false">主动读取最近消息，排查消息匹配问题。</string>
+    <string name="diagnostics_title" formatted="false">诊断工具</string>
+    <string name="duration_hint" formatted="false">5～600 秒，确认警告后立即停止。</string>
+    <string name="duration_seconds" formatted="false">最长播放时长（秒）</string>
+    <string name="edit" formatted="false">编辑</string>
+    <string name="edit_sms_macro" formatted="false">编辑短信宏</string>
+    <string name="empty_macros_description" formatted="false">选择发送号码和关键词，再设置提醒声音。</string>
+    <string name="empty_macros_title" formatted="false">创建第一条自动化</string>
+    <string name="enable_macro_accessibility">启用宏：%1$s</string>
+    <string name="enabled_macro_count">%1$d / %2$d 已启用</string>
+    <string name="error_duration_range" formatted="false">播放时长应为 5～600 秒</string>
+    <string name="error_macro_name_required" formatted="false">请填写宏名称</string>
+    <string name="error_sender_required" formatted="false">请填写至少一个发送号码</string>
+    <string name="execution_logs" formatted="false">执行日志</string>
+    <string name="export_macros" formatted="false">导出宏</string>
+    <string name="exporting_macros" formatted="false">正在导出宏…</string>
+    <string name="home_subtitle" formatted="false">为指定短信设置专属声音与提醒。</string>
+    <string name="home_title" formatted="false">让重要消息被听见</string>
+    <string name="important_alert_title">重要警告 · %1$s</string>
+    <string name="inbox_body_truncated" formatted="false">…（仅展示前512字符）</string>
+    <string name="inbox_match_source">收件箱匹配 ID=%1$d</string>
+    <string name="inbox_null_cursor" formatted="false">短信Provider返回空Cursor，无法确认查询结果</string>
+    <string name="inbox_record">第%1$d条 · ID=%2$d · type=%3$d\n时间：%4$s\n发送号码：%5$s\n正文：%6$s</string>
+    <string name="inbox_report_empty" formatted="false">没有可读取的收件箱记录。可能确实没有记录，也可能被系统隐私/权限策略过滤。\n</string>
+    <string name="inbox_report_footer" formatted="false">若测试的RCS/网络消息不在这里，不能据此读取其内容：它可能位于独立Provider，或受到系统过滤。\n结果不保存到执行日志、备份或logcat。</string>
+    <string name="inbox_report_intro" formatted="false">查询：content://sms/inbox\n按时间倒序，最多20条，仅查看，不触发宏。\n\n</string>
+    <string name="keyword" formatted="false">包含关键词</string>
+    <string name="keyword_hint" formatted="false">留空则匹配该号码的所有消息。</string>
+    <string name="keyword_summary">包含  “%1$s”</string>
+    <string name="list_separator" formatted="false">、</string>
+    <string name="loading_backup" formatted="false">正在读取备份…</string>
+    <string name="loading_contacts" formatted="false">正在读取联系人…</string>
+    <string name="loading_inbox" formatted="false">正在查询标准短信收件箱…</string>
+    <string name="local_audio" formatted="false">本地音频</string>
+    <string name="local_audio_only" formatted="false">仅允许本地音源，不支持网络地址</string>
+    <string name="local_only_badge" formatted="false">本机运行</string>
+    <string name="log_boot_restore_failed" formatted="false">开机恢复失败，请打开应用：</string>
+    <string name="log_combined_duplicate" formatted="false">COMBINED_DUPLICATE 同一宏10秒内相同内容的另一来源已执行，跳过本次重复</string>
+    <string name="log_important_notify_blocked" formatted="false">IMPORTANT_NOTIFY_BLOCKED 请授予通知权限，并在重要警告通知设置中开启该通道</string>
+    <string name="log_important_notify_hint" formatted="false">IMPORTANT_NOTIFY_HINT 通道已被设为较低重要性，请在系统设置中允许横幅提醒</string>
+    <string name="log_important_notify_retained" formatted="false">IMPORTANT_NOTIFY_RETAINED 声音已停止，通知保留至确认或手动划掉</string>
+    <string name="log_inbox_baseline_failed" formatted="false">INBOX_BASELINE_FAILED 无法保存监听起点</string>
+    <string name="log_inbox_baseline_initialized" formatted="false">INBOX_BASELINE_INITIALIZED 首次启用数据库触发，从现在开始监听，忽略升级前消息</string>
+    <string name="log_inbox_observer_change" formatted="false">INBOX_OBSERVER_CHANGE 收到数据库变化回调</string>
+    <string name="log_inbox_observer_closing" formatted="false">INBOX_OBSERVER_CLOSING 注销监听并停止后台补查</string>
+    <string name="log_inbox_observer_ready" formatted="false">INBOX_OBSERVER_READY 数据库查询可用</string>
+    <string name="log_inbox_read_blocked" formatted="false">INBOX_READ_BLOCKED 请授予读取短信权限以启用数据库自动触发</string>
+    <string name="log_inbox_read_blocked_detail" formatted="false">INBOX_READ_BLOCKED 读取短信权限已撤销，数据库自动触发暂停</string>
+    <string name="log_inbox_since_hint" formatted="false">（只查询监听开始后的收件箱记录）</string>
+    <string name="log_read_sms_permission_hint" formatted="false">，请检查读取短信权限</string>
+    <string name="log_inbox_empty_fields" formatted="false"> 字段为空</string>
+    <string name="log_audio_error" formatted="false">音源播放失败：</string>
+    <string name="log_audio_started" formatted="false">音源开始播放</string>
+    <string name="log_playback_failed" formatted="false">播放失败：</string>
+    <string name="log_overlay_permission_missing" formatted="false">未授予悬浮窗权限，仅发送警告通知</string>
+    <string name="log_overlay_failed" formatted="false">弹窗失败：</string>
+    <string name="log_execution_failed" formatted="false">执行失败：</string>
+    <string name="log_replacing_alert" formatted="false">（新警告替换上一条播放）</string>
+    <string name="log_volume_failed" formatted="false">音量设置失败（检查勿扰权限）：</string>
+    <string name="log_audio_focus_lost" formatted="false">失去音频焦点，停止声音并保留通知</string>
+    <string name="log_legacy_rules_migrated" formatted="false">通知触发已停用，原宏已转换为普通短信；无号码的宏已禁用，请编辑补充号码</string>
+    <string name="log_restore_stop_failed" formatted="false">恢复后停止服务失败：</string>
+    <string name="log_recent_messages_privacy" formatted="false">（号码与正文仅在诊断页面展示）</string>
+    <string name="log_messagenotificationservice_11" formatted="false"> INVALID 规则无效</string>
+    <string name="log_messagenotificationservice_12" formatted="false"> 号码=</string>
+    <string name="log_messagenotificationservice_13" formatted="false"> 姓名=</string>
+    <string name="log_messagenotificationservice_14" formatted="false"> 未匹配，具体原因见 NOTIFICATION_RULE</string>
+    <string name="log_messagenotificationservice_15" formatted="false"> 匹配成功，请查看后续宏执行日志</string>
+    <string name="log_messagenotificationservice_17" formatted="false">短信应用通知匹配</string>
+    <string name="log_messagenotificationservice_5" formatted="false">MessagingStyle最新消息发送人</string>
+    <string name="log_messagenotificationservice_7" formatted="false">通知标题</string>
+    <string name="log_monitor_restore" formatted="false">MONITOR_RESTORE 恢复前台服务</string>
+    <string name="log_notification_connected" formatted="false">NOTIFICATION_CONNECTED 不重放已有通知</string>
+    <string name="log_notification_hint" formatted="false">NOTIFICATION_HINT 请打开应用重新开启监听并检查后台限制</string>
+    <string name="log_notification_senders" formatted="false">NOTIFICATION_SENDERS 实际发送人=</string>
+    <string name="log_notification_skip" formatted="false">NOTIFICATION_SKIP 前台服务运行提示，不是消息通知 flags=</string>
+    <string name="log_notification_skip_detail" formatted="false">NOTIFICATION_SKIP 汇总或常驻通知</string>
+    <string name="log_notification_skip_detail_detail" formatted="false">NOTIFICATION_SKIP 非消息类别</string>
+    <string name="log_notification_skip_detail_detail_detail" formatted="false">NOTIFICATION_SKIP 无通知内容</string>
+    <string name="log_notification_skip_detail_detail_detail_detail" formatted="false">NOTIFICATION_SKIP 无明确发送人（可能是发出的消息）</string>
+    <string name="log_notification_skip_detail_detail_detail_detail_detail" formatted="false">NOTIFICATION_SKIP 监听前的历史消息</string>
+    <string name="log_notification_skip_detail_detail_detail_detail_detail_detail" formatted="false">NOTIFICATION_SKIP 正文为空或已隐藏</string>
+    <string name="log_notification_skip_detail_detail_detail_detail_detail_detail_detail" formatted="false">NOTIFICATION_SKIP 重复更新</string>
+    <string name="log_notificationdiagnostics_0" formatted="false">（最多80行、递归4层、每组16项、文本256字符）</string>
+    <string name="log_sms_ignore" formatted="false">SMS_IGNORE 非 SMS_RECEIVED 广播</string>
+    <string name="log_sms_ignore_detail" formatted="false">SMS_IGNORE 监听已关闭，请在应用中开启监听</string>
+    <string name="log_sms_parse_empty" formatted="false">SMS_PARSE_EMPTY 未解析到短信分段</string>
+    <string name="log_sms_parse_no_sender" formatted="false">SMS_PARSE_NO_SENDER 短信发送号码为空</string>
+    <string name="log_sms_provider_route" formatted="false">SMS_PROVIDER_ROUTE 广播仅唤醒收件箱查询，避免重复执行</string>
+    <string name="log_no_enabled_rules" formatted="false">没有启用的宏</string>
+    <string name="log_no_sender_match" formatted="false">发送号码未匹配任何启用的宏</string>
+    <string name="log_no_keyword_match" formatted="false">号码已匹配，短信关键词未命中</string>
+    <string name="log_sms_received_prefix" formatted="false">收到短信 · </string>
+    <string name="log_sms_start_requested" formatted="false">，请求启动宏服务</string>
+    <string name="sms_match_source" formatted="false">短信匹配</string>
+    <string name="log_sms_start_failed" formatted="false">短信启动失败：</string>
+    <string name="logs_description" formatted="false">运行记录不包含短信正文。</string>
+    <string name="logs_empty" formatted="false">暂无记录。开启监听或测试宏后，运行记录会显示在这里。</string>
+    <string name="macro_name" formatted="false">宏名称</string>
+    <string name="manage_permissions" formatted="false">管理权限</string>
+    <string name="manual_test_source" formatted="false">手动测试</string>
+    <string name="match_any_content" formatted="false">匹配所有内容</string>
+    <string name="monitor_channel_name" formatted="false">后台监听</string>
+    <string name="monitor_enabled" formatted="false">短信监听已开启</string>
+    <string name="monitor_enabled_description" formatted="false">新消息符合条件时，自动播放声音并发出重要警告。</string>
+    <string name="monitor_paused" formatted="false">短信监听已暂停</string>
+    <string name="monitor_paused_description" formatted="false">开启监听，让重要消息及时提醒你。</string>
+    <string name="monitor_playing_notification" formatted="false">警告播放中，点击可返回应用</string>
+    <string name="monitor_running_notification" formatted="false">短信宏监听已开启</string>
+    <string name="more_actions" formatted="false">更多操作</string>
+    <string name="my_macros" formatted="false">我的宏</string>
+    <string name="nav_automation" formatted="false">自动化</string>
+    <string name="nav_logs" formatted="false">日志</string>
+    <string name="nav_settings" formatted="false">设置</string>
+    <string name="new_sms_macro" formatted="false">新建短信宏</string>
+    <string name="notification_listener_label" formatted="false">AutoDroid 短信应用通知监听</string>
+    <string name="overlay_alert_title">⚠ %1$s</string>
+    <string name="page_unavailable">系统不支持此页面：%1$s</string>
+    <string name="pause_monitor" formatted="false">暂停监听</string>
+    <string name="permission_contacts" formatted="false">通讯录权限（可选，手填号码无需授权）</string>
+    <string name="permission_denied" formatted="false">权限未授予，可在应用设置中开启</string>
+    <string name="permission_dnd" formatted="false">勿扰访问（铃声/通知音量受限时）</string>
+    <string name="permission_granted" formatted="false">授权成功</string>
+    <string name="permission_label">%1$s %2$s</string>
+    <string name="permission_notifications" formatted="false">通知权限</string>
+    <string name="permission_overlay" formatted="false">允许悬浮警告框</string>
+    <string name="permission_privacy_description" formatted="false">短信触发用于本机匹配，不上传；开启监听后读取新增收件箱记录以自动触发；最近消息诊断仅在你点击时展示。</string>
+    <string name="permission_read_sms" formatted="false">读取短信权限（数据库自动触发 / 最近消息诊断）</string>
+    <string name="permission_receive_sms" formatted="false">接收短信权限</string>
+    <string name="permission_status_granted" formatted="false">✓</string>
+    <string name="permission_status_missing" formatted="false">○</string>
+    <string name="permissions_description" formatted="false">短信、通知、悬浮窗与省电设置</string>
+    <string name="permissions_dialog_title" formatted="false">权限与后台设置（重新打开可刷新状态）</string>
+    <string name="permissions_title" formatted="false">权限与后台</string>
+    <string name="privacy_description" formatted="false">应用无联网权限，消息在本机匹配。按返回键可退到后台继续监听。</string>
+    <string name="privacy_title" formatted="false">只在你的手机上运行</string>
+    <string name="read_contacts_description" formatted="false">用于显示联系人姓名和电话号码，供你多选。只把选中的号码保存到宏中，不上传通讯录；也可以取消并手动输入号码。</string>
+    <string name="read_contacts_title" formatted="false">读取通讯录</string>
+    <string name="read_recent_messages" formatted="false">查看最近消息</string>
+    <string name="reading_please_wait" formatted="false">正在读取，请稍候</string>
+    <string name="recent_messages_count">最近消息诊断 · %1$d 条</string>
+    <string name="recent_messages_error">%1$s：%2$s\n\n接收短信权限不等于读取短信权限；系统也可能限制第三方读取。请检查读取短信授权。</string>
+    <string name="recent_messages_failed" formatted="false">无法读取最近消息</string>
+    <string name="recent_messages_permission_description" formatted="false">需要读取短信权限，用于查看标准收件箱最近20条消息的号码、时间和正文，确认RCS是否也存入标准短信表。只在此页面展示，不保存、不写入logcat，不执行宏。</string>
+    <string name="recent_messages_title" formatted="false">读取最近消息诊断</string>
+    <string name="refresh" formatted="false">刷新</string>
+    <string name="reload" formatted="false">重新读取</string>
+    <string name="replace_all" formatted="false">替换全部</string>
+    <string name="replace_all_description">将用备份中的 %1$d 条宏替换当前全部宏，请先确认已导出当前配置。</string>
+    <string name="replace_all_title" formatted="false">确认替换全部宏</string>
+    <string name="request_permission" formatted="false">申请权限</string>
+    <string name="restore_complete">已恢复 %1$d 条宏；请重新检查权限和音源后开启监听</string>
+    <string name="restore_count_exceeded" formatted="false">恢复后宏数量不能超过500</string>
+    <string name="restore_description" formatted="false">追加会保留现有宏，重复导入也会追加。替换会覆盖全部现有宏。恢复后监听将关闭，请检查号码和音源，再手动开启。音频文件和系统权限不会随备份恢复。</string>
+    <string name="restore_macros" formatted="false">从备份恢复</string>
+    <string name="restore_title">恢复 %1$d 条宏</string>
+    <string name="save" formatted="false">保存</string>
+    <string name="save_failed" formatted="false">保存失败，请检查存储空间</string>
+    <string name="search_contacts" formatted="false">搜索姓名或号码</string>
+    <string name="sender_numbers" formatted="false">发送号码</string>
+    <string name="sender_numbers_hint" formatted="false">多个号码用换行、逗号或分号分隔，任意一个匹配。</string>
+    <string name="sender_summary">来自  %1$s</string>
+    <string name="settings_description" formatted="false">管理权限、备份与本机诊断。</string>
+    <string name="sound_permission_failed" formatted="false">音源访问未能持久保存，请重新选择文件</string>
+    <string name="sound_section" formatted="false">声音与音量</string>
+    <string name="start_monitor" formatted="false">开启监听</string>
+    <string name="start_test" formatted="false">开始测试</string>
+    <string name="stop_audio" formatted="false">停止声音</string>
+    <string name="stop_current_alert" formatted="false">停止当前警告</string>
+    <string name="stop_monitor" formatted="false">关闭监听</string>
+    <string name="system_ringtone" formatted="false">系统铃声</string>
+    <string name="test" formatted="false">测试</string>
+    <string name="test_macro_description" formatted="false">将立即调节系统音量、播放声音并弹出警告。测试会跳过短信匹配条件。</string>
+    <string name="test_macro_title" formatted="false">测试这条宏？</string>
+    <string name="test_volume_notice" formatted="false">测试会实际改变系统音量；音量不会自动恢复。</string>
+    <string name="theme_play" formatted="false">Play 蓝白</string>
+    <string name="theme_x" formatted="false">X 黑白</string>
+    <string name="trigger_conditions" formatted="false">触发条件</string>
+    <string name="unnamed_contact" formatted="false">未命名</string>
+    <string name="use_selected_numbers" formatted="false">使用所选号码</string>
+    <string name="volume_percent">音量  %1$d%%</string>
+    <string name="backup_error_trailing_content" formatted="false">备份末尾包含多余内容</string>
+    <string name="backup_error_invalid_file" formatted="false">不是有效的宏备份文件</string>
+    <string name="backup_error_version" formatted="false">不支持的备份格式或版本</string>
+    <string name="backup_error_rule_limit" formatted="false">最多支持500条宏</string>
+    <string name="backup_error_missing_name">第%1$d条宏缺少名称</string>
+    <string name="backup_error_numbers_type" formatted="false">号码列表类型无效</string>
+    <string name="backup_error_number_limit" formatted="false">每条宏最多100个号码</string>
+    <string name="backup_error_number_type" formatted="false">号码必须是字符串且长度不超过256</string>
+    <string name="backup_error_missing_numbers">第%1$d条宏需包含1～100个号码</string>
+    <string name="backup_error_sound" formatted="false">不支持的音源地址</string>
+    <string name="backup_error_enabled" formatted="false">启用状态类型无效</string>
+    <string name="backup_error_missing_field">缺少字段：%1$s</string>
+    <string name="backup_error_invalid_field">字段类型或长度无效：%1$s</string>
+    <string name="backup_error_numeric_field">字段必须是数字：%1$s</string>
+    <string name="backup_error_field_range">字段超出范围：%1$s</string>
+    <string name="backup_error_invalid_json" formatted="false">备份不是有效的 JSON 宏配置，请检查文件格式。</string>
+    <string name="log_volume_set">音量设置：%1$d%%，实际档位 %2$d</string>
+    <string name="log_sms_match_count">匹配宏 %1$d 条（执行结果见后续日志）</string>
+    <string name="native_about_version">AutoDroid %1$s</string>
+    <string name="native_selected_suffix" formatted="false">，已选中</string>
+    <string name="native_monitor_enabled_description" formatted="false">匹配到新消息时，播放声音并显示重要警告。</string>
+    <string name="native_monitor_paused_description" formatted="false">开启后，自动为符合条件的新消息发出警告。</string>
+    <string name="native_permission_hint" formatted="false">检查短信读取、通知与悬浮窗权限，让提醒完整呈现。</string>
+    <string name="native_empty_macros_description" formatted="false">选择发送号码、填写关键词，再设置你想听到的声音。</string>
+    <string name="native_enable_macro_suffix" formatted="false">，启用宏</string>
+    <string name="native_sender_prefix" formatted="false">来自  </string>
+    <string name="native_keyword_prefix" formatted="false">包含  “</string>
+    <string name="native_duration_suffix" formatted="false"> 秒</string>
+    <string name="native_delete_action" formatted="false">删除这条宏</string>
+    <string name="native_delete_title" formatted="false">删除宏？</string>
+    <string name="native_more_actions_prefix" formatted="false">更多操作：</string>
+    <string name="native_logs_description" formatted="false">查看监听与宏的运行记录，不记录短信正文。</string>
+    <string name="native_backup_description" formatted="false">换机或重装前，先保存你的自动化配置。</string>
+    <string name="native_diagnostics_description" formatted="false">排查消息读取问题，仅在你主动操作时展示最近消息。</string>
+    <string name="native_general_section" formatted="false">基本信息</string>
+    <string name="native_trigger_hint" formatted="false">号码满足其一，并包含下方关键词时触发。</string>
+    <string name="native_numbers_label" formatted="false">发送号码（多个号码用换行、逗号或分号分隔，任意一个匹配）</string>
+    <string name="native_choose_contacts" formatted="false">从通讯录选择多个联系人/号码</string>
+    <string name="native_keyword_label" formatted="false">消息包含关键词（留空则不限）</string>
+    <string name="native_audio_channel_label" formatted="false">播放及调节的音频通道</string>
+    <string name="native_volume_label" formatted="false">音量百分比</string>
+    <string name="native_duration_label" formatted="false">最长播放秒数（5～600，循环播放至确认或超时）</string>
+    <string name="native_message_label" formatted="false">警告框内容</string>
+    <string name="native_choose_ringtone" formatted="false">选择系统铃声</string>
+    <string name="native_choose_audio_file" formatted="false">选择本地音频文件</string>
+    <string name="native_required_fields" formatted="false">请填写宏名称及发送号码</string>
+    <string name="native_read_sms_error_hint" formatted="false">\n\n接收短信权限不等于读取短信权限；系统也可能限制第三方读取。请检查读取短信授权。</string>
+    <string name="native_macro_count">%1$d 条自动化 · %2$d 条已启用</string>
+</resources>

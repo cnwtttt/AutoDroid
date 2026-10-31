@@ -4,10 +4,19 @@ package com.autodroid;
 final class InboxCheckpoint {
     final long since;
     private long lastId;
-    InboxCheckpoint(long since,long lastId) { this.since=since; this.lastId=lastId; }
-    boolean accept(long id,long date) {
-        if (id<=lastId || date<since) return false;
-        lastId=id; return true;
+
+    InboxCheckpoint(long since, long lastId) {
+        this.since = since;
+        this.lastId = lastId;
     }
-    long lastId() { return lastId; }
+
+    boolean accept(long id, long date) {
+        if (id <= lastId || date < since) return false;
+        lastId = id;
+        return true;
+    }
+
+    long lastId() {
+        return lastId;
+    }
 }

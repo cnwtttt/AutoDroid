@@ -1,8 +1,40 @@
 # AutoDroid
 
-当前版本：**0.5.1**
+当前版本：**0.7.0**
 
 普通手机短信警告自动化应用，Android 8.0（API 26）以上，无需 root。
+默认界面采用 **Jetpack Compose + Material 3**，X 黑白为默认配色，Play 蓝白可在设置中选择。
+原生界面保留为备选，两版共享短信读取、规则匹配、音频播放、通知与备份代码，均无联网权限。
+
+## 界面版本
+
+| 版本 | 模块 | 默认构建入口 | APK |
+| --- | --- | --- | --- |
+| Compose 正式版 | `app` | `./scripts/build.sh` | `build/compose/AutoDroid-compose.apk` |
+| 原生备选版 | `native-app` | `./scripts/build.sh --native` | `build/native/AutoDroid-native.apk` |
+
+原生版延续 0.5.1 的界面，不依赖 Compose；业务代码和资源复用正式版。
+两版均使用 `com.autodroid` 包名、相同 versionCode 和同一本地签名，可覆盖切换并保留配置，不能同时安装。
+切换前建议先导出宏备份；保持相同签名，不要通过卸载来切换界面。
+
+## 代码维护
+
+Compose 页面按导航宿主、自动化首页、日志页、设置页、宏编辑器和共用组件拆分。
+原生 UI 位于 `native-app/src/main/java`；共享 Java 业务代码及资源位于 `app/src/main`。
+原生 Gradle 模块在构建时同步共享 Java 代码到被忽略的生成目录，不复制维护业务逻辑。
+界面、通知、诊断及本地化日志文案集中在 `strings.xml`，通道选项使用 `arrays.xml`；
+变量文案使用位置占位符。JSON 字段、偏好键、URI、线程名称和诊断事件代码保留为协议常量。
+备份校验层返回类型化错误，Android 界面层负责本地化错误和默认警告文字。
+
+```sh
+./scripts/format.sh          # Java: google-java-format AOSP；Kotlin: ktfmt
+./scripts/format.sh --check  # 仅检查，不修改
+./scripts/check-resources.py # 两版文案引用、硬编码中文与格式占位符
+./scripts/test.sh
+```
+
+格式工具使用上层 AOSP 自带版本与 Java 21，可通过 `AOSP_ROOT` 和 `FORMAT_JAVA_BIN` 指定。
+配色使用具名偏好；首次使用默认 X，主动选择 Play 后保留选择。两种配色均支持系统深浅色模式。
 
 ## 使用
 
@@ -57,27 +89,37 @@ RECEIVE_SMS 属受限权限，部分安装器/系统可能不允许授权；请�
 
 ## 构建
 
-标准 Android Gradle 工程：用 Android Studio 打开本目录，安装 SDK 36，使用 JDK 17+。
-AGP 8.12.0 需要 Gradle 8.13，可执行 `gradle :app:assembleDebug`，首次需要下载依赖。
-
-当前 AOSP 工作区支持离线编译：
+版本号统一维护在 `version.properties`，两版共享 versionCode，原生版 versionName 增加 `-native` 标识。
+Gradle 8.13、AGP 8.12.0、SDK 36、JDK 17+；Kotlin/Compose Compiler 2.2.0、Compose BOM 2025.06.01、Activity Compose 1.10.1。
+SDK 使用被忽略的 `local.properties` 或 `ANDROID_HOME` 配置；首次构建 Compose 需要下载依赖，手机运行不需要联网。
+Gradle 可通过 `GRADLE_BIN` 指定。
 
 ```sh
-./scripts/build.sh
-./scripts/test.sh
+./scripts/build.sh                         # 默认 Compose，签名 Release 包
+./scripts/build-compose.sh --offline       # 依赖缓存完整时离线构建
+./scripts/build-native.sh                  # 原生备选，AOSP 工具链离线构建
+BUILD_TYPE=debug ./scripts/build-compose.sh # 可选调试构建
+
+gradle :app:assembleRelease                # Android Studio / 标准 Gradle
+gradle :native-app:assembleRelease         # 原生备选也支持 Gradle
 ```
 
-离线脚本使用上层 AOSP 目录中的 SDK 36、aapt2、R8、zipalign、apksigner，
-也可通过 AOSP_ROOT 指定该目录。需要 javac、java、jar、keytool、zip。
-测试另需 JVM org.json jar，默认从本机 Gradle 缓存找，可通过 JSON_JAR 指定。
-调试签名密钥生成于 build/offline，不纳入 Git；请保留以便覆盖安装。
-当前版本无预置音频文件，默认使用手机系统自带铃声。
+两版默认构建 Release（非 debuggable），沿用 `build/offline/debug.keystore` 中的现有本地签名，
+该文件及 APK、日志、备份均不纳入 Git。脚本不会在密钥缺失时悄悄生成新签名；覆盖安装必须恢复原密钥。
+新装使用者可创建自己的本地测试密钥，但不能覆盖由其他密钥签名的已有安装。
+此配置用于本机直接安装，未进行应用商店审核，不包含可公开分发的私钥。
+
+原生离线脚本使用上层 AOSP 的 SDK 36、aapt2、R8、zipalign、apksigner，也可通过 `AOSP_ROOT` 指定。
+需要 javac、java、jar、zip。测试另需 JVM org.json jar，默认读取本机 Gradle 缓存，可通过 `JSON_JAR` 指定。
+原生 Gradle APK 位于 `native-app/build/outputs/apk/release/`。
+当前无预置音频文件，默认使用手机系统铃声。
 
 ## 验证范围
 
-源码编译、DEX 转换、APK 打包与签名校验；75 项消息匹配单元检查覆盖多号码任意匹配、分隔符、去重、旧规则兼容、持久化、前缀、关键词、
-禁用规则、服务号码、空号码和错误号码，以及通知姓名/号码匹配、来源隔离和重复通知过滤。
-普通 SMS 流程已由用户真机日志确认匹配、音量设置和播放；新增通知流程及最近任务行为尚未真机验证。
+共享业务包含 75 项匹配、24 项备份和 15 项 ID 进度检查，共 114 项；另有文案资源和格式检查。
+构建检查包括 Compose Release、原生离线包、原生 Gradle Release，以及签名和权限清单。
+用户真机已确认短信读取/匹配、音量设置、重要通知、声音播放、Back 退后台与导航对齐；
+本次双模块构建与正式版打包未直接在手机上验证。网络消息通知监听仍禁用。
 
 真机需检查：通讯录授权/拒绝、联系人搜索/多选/取消、多号码短信匹配、旧规则升级、手动测试、真实长短信、非匹配号码、后台/锁屏、
 音频文件重启后访问、停止/超时、服务重启、开机恢复和强行停止后的恢复。
@@ -85,6 +127,14 @@ AGP 8.12.0 需要 Gradle 8.13，可执行 `gradle :app:assembleDebug`，首次�
 ## 版本记录
 
 按版本号从新到旧排列。各节描述对应版本的变更；0.3.0～0.3.4 的通知监听功能已于 0.3.5 停用，当前使用收件箱监听。
+
+### 0.7.0 Compose 正式版与原生备选
+
+- Compose / Material 3 成为默认界面；X 黑白默认、Play 蓝白可选，跟随系统深浅色模式。
+- 页面与宏编辑器拆分，文案资源化，统一代码格式并提供检查脚本。
+- 原生 0.5.1 界面保留为 `native-app`，复用同一业务代码，可用 Gradle 或 AOSP 离线工具构建。
+- 统一版本文件与本地签名，两版相同 versionCode，支持覆盖切换；默认生成签名 Release APK。
+- 保留 Back 退后台、收件箱监听、重要警告、宏导出恢复及无联网权限策略。
 
 ### 0.5.1 底部导航对齐
 
