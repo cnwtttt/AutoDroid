@@ -14,6 +14,7 @@ import org.json.*;
 
 public class MacroService extends Service {
     private MediaPlayer player;
+    private InboxMonitor inboxMonitor;
     private AudioFocusRequest focus;
     private View overlay;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -27,6 +28,27 @@ public class MacroService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel("monitor", "后台监听", NotificationManager.IMPORTANCE_LOW));
         ensureAlertChannel(this);
+    }
+    private void ensureInboxMonitor() {
+        if (!Store.prefs(this).getBoolean("monitor",false)) return;
+        if (checkSelfPermission(android.Manifest.permission.READ_SMS)!=android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Store.log(this,"INBOX_READ_BLOCKED 请授予读取短信权限以启用数据库自动触发"); return;
+        }
+        if (inboxMonitor==null) {
+            if (!Store.prefs(this).getBoolean("providerBaselineInitialized",false)) {
+                if (!Store.prefs(this).edit().putLong("monitorSince",System.currentTimeMillis())
+                        .putBoolean("providerBaselineInitialized",true).commit()) {
+                    Store.log(this,"INBOX_BASELINE_FAILED 无法保存监听起点"); return;
+                }
+                Store.log(this,"INBOX_BASELINE_INITIALIZED 首次启用数据库触发，从现在开始监听，忽略升级前消息");
+            }
+            inboxMonitor=new InboxMonitor(this,(rule,id) -> {
+                try { run(rule,"收件箱匹配 ID="+id); }
+                catch (RuntimeException e) { Store.log(this,"INBOX_EXECUTION_FAILED id="+id+" "+e.getClass().getSimpleName()); stopAlert(false); }
+            });
+            inboxMonitor.start();
+        }
+        inboxMonitor.requestScan();
     }
     static void ensureAlertChannel(Context context) {
         NotificationChannel channel = new NotificationChannel("alerts", "重要宏警告", NotificationManager.IMPORTANCE_HIGH);
@@ -56,10 +78,16 @@ public class MacroService extends Service {
         Store.log(this, "SERVICE_COMMAND action=" + action + " monitor=" + Store.prefs(this).getBoolean("monitor",false));
         if ("STOP".equals(action)) {
             Store.prefs(this).edit().putBoolean("monitor", false).commit();
+            if (inboxMonitor!=null) { inboxMonitor.close(); inboxMonitor=null; }
             stopAlert(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); return START_NOT_STICKY;
         }
-        if ("SILENCE".equals(action)) { stopAlert(); return START_STICKY; }
+        if ("SILENCE".equals(action)) {
+            stopAlert();
+            if (Store.prefs(this).getBoolean("monitor",false)) { promote(false); ensureInboxMonitor(); return START_STICKY; }
+            return START_NOT_STICKY;
+        }
         promote(player != null);
+        ensureInboxMonitor();
         if ("RUN".equals(action)) {
             try {
                 JSONObject rule = new JSONObject(intent.getStringExtra("rule"));
@@ -98,7 +126,11 @@ public class MacroService extends Service {
             player.setAudioAttributes(attrs);
             player.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
             String uri = rule.optString("sound", "");
-            player.setDataSource(this, uri.isEmpty() ? Settings.System.DEFAULT_ALARM_ALERT_URI : Uri.parse(uri));
+            Uri soundUri=uri.isEmpty() ? Settings.System.DEFAULT_ALARM_ALERT_URI : Uri.parse(uri);
+            String scheme=soundUri.getScheme();
+            if (!("content".equals(scheme) || "android.resource".equals(scheme) || "file".equals(scheme)))
+                throw new IllegalArgumentException("仅允许本地音源，不支持网络地址");
+            player.setDataSource(this,soundUri);
             player.setLooping(true);
             player.setOnErrorListener((mp, what, extra) -> { Store.log(this, "音源播放失败：" + what + "/" + extra); stopAlert(false); return true; });
             player.setOnPreparedListener(mp -> { mp.start(); Store.log(this, "音源开始播放"); });
@@ -153,6 +185,6 @@ public class MacroService extends Service {
         if (Store.prefs(this).getBoolean("monitor", false)) { if (foreground) promote(false); }
         else { stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(); }
     }
-    @Override public void onDestroy() { isRunning = false; Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
+    @Override public void onDestroy() { if (inboxMonitor!=null) { inboxMonitor.close(); inboxMonitor=null; } isRunning = false; Store.log(this, "SERVICE_DESTROY"); stopAlertResources(); foreground = false; super.onDestroy(); }
     @Override public IBinder onBind(Intent intent) { return null; }
 }

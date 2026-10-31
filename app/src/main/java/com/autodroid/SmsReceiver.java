@@ -15,6 +15,14 @@ public class SmsReceiver extends BroadcastReceiver {
             Store.log(c, "SMS_IGNORE 非 SMS_RECEIVED 广播"); return;
         }
         if (!monitor) { Store.log(c, "SMS_IGNORE 监听已关闭，请在应用中开启监听"); return; }
+        if (c.checkSelfPermission(android.Manifest.permission.READ_SMS)==android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            // All SMS/RCS records use the same persisted ID checkpoint when provider access is enabled.
+            try {
+                c.startForegroundService(new Intent(c,MacroService.class).setAction("SCAN_INBOX"));
+                Store.log(c,"SMS_PROVIDER_ROUTE 广播仅唤醒收件箱查询，避免重复执行");
+            } catch (RuntimeException e) { Store.log(c,"SMS_PROVIDER_WAKE_FAILED "+e.getClass().getSimpleName()); }
+            return;
+        }
         try { processSms(c, intent); }
         catch (RuntimeException e) {
             android.util.Log.e("AutoDroid", "SMS_PROCESS_ERROR", e);

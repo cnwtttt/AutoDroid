@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
         render(); }
     @Override public void onResume() {
         super.onResume(); render();
-        Store.log(this, "APP_RESUME version=0.3.8 monitor=" + Store.prefs(this).getBoolean("monitor", false)
+        Store.log(this, "APP_RESUME version=0.4.0 monitor=" + Store.prefs(this).getBoolean("monitor", false)
             + " receiveSmsPermission=" + granted(Manifest.permission.RECEIVE_SMS)
             + " overlayPermission=" + Settings.canDrawOverlays(this));
         for (ActivityManager.AppTask task : getSystemService(ActivityManager.class).getAppTasks()) task.setExcludeFromRecents(true);
@@ -66,7 +66,9 @@ public class MainActivity extends Activity {
         text(root, "AutoDroid", 32); text(root, "短信到达 → 调节音量 → 播放音源 → 弹出警告", 15);
         boolean enabled = Store.prefs(this).getBoolean("monitor", false);
         text(root, enabled ? "● 已请求开启监听" : "○ 监听已关闭", 20);
+        text(root,"自动触发：收件箱 ContentObserver · 读取短信权限"+(granted(Manifest.permission.READ_SMS)?"已授权":"未授权")+" · 应用无联网权限",14);
         button(root, enabled ? "关闭监听并停止声音" : "开启后台短信监听", () -> {
+            if (!enabled && !granted(Manifest.permission.READ_SMS)) { requestPermissions(new String[]{Manifest.permission.READ_SMS},5); return; }
             if (!enabled && needsSms() && !granted(Manifest.permission.RECEIVE_SMS)) { requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS}, 1); return; }
             Store.log(this, "MONITOR_REQUEST enabled=" + !enabled);
             if (enabled) startService(new Intent(this, MacroService.class).setAction("STOP"));
@@ -330,9 +332,9 @@ public class MainActivity extends Activity {
     }
     private void permissions() {
         LinearLayout box = column();
-        text(box,"短信触发用于本机匹配，不上传；“读取最近消息诊断”仅在你点击时读取最近记录并在页面展示。",16);
+        text(box,"短信触发用于本机匹配，不上传；开启监听后读取新增收件箱记录以自动触发；最近消息诊断仅在你点击时展示。",16);
         button(box,(granted(Manifest.permission.RECEIVE_SMS)?"✓ ":"○ ")+"接收短信权限", () -> requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},1));
-        button(box,(granted(Manifest.permission.READ_SMS)?"✓ ":"○ ")+"读取短信权限（仅用于最近消息诊断）",this::recentSmsDiagnostics);
+        button(box,(granted(Manifest.permission.READ_SMS)?"✓ ":"○ ")+"读取短信权限（数据库自动触发 / 最近消息诊断）",this::recentSmsDiagnostics);
         button(box,(granted(Manifest.permission.READ_CONTACTS)?"✓ ":"○ ")+"通讯录权限（可选，手填号码无需授权）", () -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},3));
         if (Build.VERSION.SDK_INT >= 33) button(box,(granted(Manifest.permission.POST_NOTIFICATIONS)?"✓ ":"○ ")+"通知权限", () -> requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},2));
         button(box,(Settings.canDrawOverlays(this)?"✓ ":"○ ")+"允许悬浮警告框", () -> launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())),20));
@@ -350,6 +352,9 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this); scroll.addView(box);
         new AlertDialog.Builder(this).setTitle("权限与后台设置（重新打开可刷新状态）").setView(scroll).setPositiveButton("关闭",null).show();
     }
-    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); if (r == 3 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && contactTarget != null) chooseContacts(contactTarget); if (r == 4 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED) recentSmsDiagnostics(); }
+    @Override public void onRequestPermissionsResult(int r,String[] p,int[] g) { super.onRequestPermissionsResult(r,p,g); toast(g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED ? "授权成功" : "权限未授予，可在应用设置中开启"); render(); if (r == 3 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && contactTarget != null) chooseContacts(contactTarget); if (r == 4 && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED) recentSmsDiagnostics();
+        if ((r == 4 || r == 5) && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED && Store.prefs(this).getBoolean("monitor",false)) {
+            try { startForegroundService(new Intent(this,MacroService.class).setAction("SCAN_INBOX")); } catch (RuntimeException e) { toast(e.getMessage()); }
+        } }
     private void toast(String s) { Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
 }
