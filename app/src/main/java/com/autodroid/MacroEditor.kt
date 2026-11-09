@@ -36,6 +36,9 @@ internal fun MacroEditor(
     }
     var numbers by rememberSaveable { mutableStateOf(Store.numberText(old)) }
     var keyword by rememberSaveable { mutableStateOf(old.optString("keyword")) }
+    var keywordMode by rememberSaveable {
+        mutableStateOf(if (old.optString("keywordMode") == "all") "all" else "any")
+    }
     var channel by rememberSaveable { mutableIntStateOf(old.optInt("channel").coerceIn(0, 3)) }
     var volume by rememberSaveable { mutableFloatStateOf(old.optInt("volume", 80).toFloat()) }
     var duration by rememberSaveable { mutableStateOf(old.optInt("duration", 60).toString()) }
@@ -120,6 +123,7 @@ internal fun MacroEditor(
                                         .put("name", name.trim())
                                         .put("numbers", JSONArray(parsed))
                                         .put("keyword", keyword)
+                                        .put("keywordMode", keywordMode)
                                         .put("channel", channel)
                                         .put("volume", volume.toInt())
                                         .put("duration", seconds)
@@ -173,8 +177,25 @@ internal fun MacroEditor(
                         { keyword = it },
                         label = { Text(activity.getString(R.string.keyword)) },
                         supportingText = { Text(activity.getString(R.string.keyword_hint)) },
+                        minLines = 2,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Text(
+                        activity.getString(R.string.keyword_mode),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(AppDimensions.size8)) {
+                        FilterChip(
+                            selected = keywordMode != "all",
+                            onClick = { keywordMode = "any" },
+                            label = { Text(activity.getString(R.string.keyword_any)) },
+                        )
+                        FilterChip(
+                            selected = keywordMode == "all",
+                            onClick = { keywordMode = "all" },
+                            label = { Text(activity.getString(R.string.keyword_all)) },
+                        )
+                    }
                     Text(
                         activity.getString(R.string.sound_section),
                         style = MaterialTheme.typography.titleMedium,

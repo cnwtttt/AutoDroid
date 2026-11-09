@@ -466,9 +466,13 @@ public class MainActivity extends Activity {
                     card,
                     r.optString("keyword").isEmpty()
                             ? getString(R.string.match_any_content)
-                            : getString(R.string.native_keyword_prefix)
-                                    + r.optString("keyword")
-                                    + "”",
+                            : getString(
+                                    R.string.keyword_summary_multi,
+                                    getString(
+                                            "all".equals(r.optString("keywordMode"))
+                                                    ? R.string.keyword_all
+                                                    : R.string.keyword_any),
+                                    r.optString("keyword").replace("\n", " / ")),
                     R.dimen.text_14);
             ui.space(card, R.dimen.space_8);
             TextView chip =
@@ -715,9 +719,22 @@ public class MainActivity extends Activity {
         EditText keyword =
                 field(
                         form,
-                        getString(R.string.native_keyword_label),
+                        getString(R.string.keyword),
                         old.optString("keyword"),
-                        InputType.TYPE_CLASS_TEXT);
+                        InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        keyword.setMinLines(2);
+        text(form, getString(R.string.keyword_hint), R.dimen.text_14);
+        text(form, getString(R.string.keyword_mode), R.dimen.text_15);
+        Spinner keywordMode = new Spinner(this);
+        keywordMode.setAdapter(
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        new String[] {
+                            getString(R.string.keyword_any), getString(R.string.keyword_all)
+                        }));
+        keywordMode.setSelection("all".equals(old.optString("keywordMode")) ? 1 : 0);
+        form.addView(keywordMode);
         text(form, getString(R.string.sound_section), R.dimen.text_22);
         text(form, getString(R.string.native_audio_channel_label), R.dimen.text_15);
         Spinner channel = new Spinner(this);
@@ -852,6 +869,13 @@ public class MainActivity extends Activity {
                                                                         "keyword",
                                                                         keyword.getText()
                                                                                 .toString())
+                                                                .put(
+                                                                        "keywordMode",
+                                                                        keywordMode
+                                                                                                .getSelectedItemPosition()
+                                                                                        == 1
+                                                                                ? "all"
+                                                                                : "any")
                                                                 .put(
                                                                         "channel",
                                                                         channel

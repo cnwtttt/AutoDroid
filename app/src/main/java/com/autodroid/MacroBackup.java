@@ -44,7 +44,7 @@ final class MacroBackup {
     static String exportRules(JSONArray rules, String defaultMessage) throws JSONException {
         return new JSONObject()
                 .put("format", "AutoDroid.macros")
-                .put("version", 1)
+                .put("version", 2)
                 .put("createdAt", System.currentTimeMillis())
                 .put("rules", validate(rules, defaultMessage))
                 .toString(2);
@@ -64,7 +64,8 @@ final class MacroBackup {
         JSONObject backup = (JSONObject) parsed;
         if (!"AutoDroid.macros".equals(backup.optString("format"))
                 || !(backup.opt("version") instanceof Number)
-                || ((Number) backup.opt("version")).doubleValue() != 1)
+                || (((Number) backup.opt("version")).doubleValue() != 1
+                        && ((Number) backup.opt("version")).doubleValue() != 2))
             throw new ValidationException(Error.UNSUPPORTED_VERSION);
         return validate(backup.getJSONArray("rules"), defaultMessage);
     }
@@ -100,12 +101,18 @@ final class MacroBackup {
                 throw new ValidationException(Error.INVALID_SOUND);
             if (r.has("enabled") && !(r.get("enabled") instanceof Boolean))
                 throw new ValidationException(Error.INVALID_ENABLED);
+            String keywordMode = string(r, "keywordMode", "single", 16);
+            if (!("single".equals(keywordMode)
+                    || "any".equals(keywordMode)
+                    || "all".equals(keywordMode)))
+                throw new ValidationException(Error.INVALID_FIELD, "keywordMode");
             result.put(
                     new JSONObject()
                             .put("name", name)
                             .put("source", "sms")
                             .put("numbers", new JSONArray(numbers))
                             .put("keyword", string(r, "keyword", "", 4096))
+                            .put("keywordMode", keywordMode)
                             .put("message", string(r, "message", defaultMessage, 4096))
                             .put("sound", sound)
                             .put("channel", integer(r, "channel", 0, 0, 3))

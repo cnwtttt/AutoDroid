@@ -57,7 +57,7 @@ public class MacroBackupTest {
                         == 1);
         rejects(() -> MacroBackup.importRules("{bad json"));
         rejects(() -> MacroBackup.importRules(json + "garbage"));
-        rejects(() -> MacroBackup.importRules(new JSONObject(json).put("version", 2).toString()));
+        rejects(() -> MacroBackup.importRules(new JSONObject(json).put("version", 3).toString()));
         rejects(() -> MacroBackup.importRules(new JSONObject(json).put("version", 1.5).toString()));
         rejects(
                 () ->
@@ -109,6 +109,29 @@ public class MacroBackupTest {
         } catch (MacroBackup.ValidationException e) {
             check(e.error == MacroBackup.Error.MISSING_NAME && e.arguments[0].equals(1));
         }
+        for (String mode : new String[] {"any", "all"}) {
+            JSONObject multi =
+                    rule().put("enabled", true).put("keyword", "报警\n断电").put("keywordMode", mode);
+            String backup = MacroBackup.exportRules(new JSONArray().put(multi));
+            check(new JSONObject(backup).getInt("version") == 2);
+            JSONObject restoredMulti = MacroBackup.importRules(backup).getJSONObject(0);
+            check(restoredMulti.getString("keywordMode").equals(mode));
+            check(restoredMulti.getString("keyword").equals("报警\n断电"));
+            check(Store.matches(restoredMulti, "13800138000", "报警断电"));
+        }
+        check(
+                MacroBackup.importRules(new JSONObject(json).put("version", 1).toString()).length()
+                        == 1);
+        check(
+                MacroBackup.validate(new JSONArray().put(rule()))
+                        .getJSONObject(0)
+                        .getString("keywordMode")
+                        .equals("single"));
+        rejects(
+                () ->
+                        MacroBackup.validate(
+                                new JSONArray().put(rule().put("keywordMode", "unknown"))));
+        rejects(() -> MacroBackup.validate(new JSONArray().put(rule().put("keywordMode", 2))));
         System.out.println("PASS: " + checks + " macro backup checks");
     }
 }

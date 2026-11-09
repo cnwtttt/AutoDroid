@@ -83,8 +83,8 @@
     <string name="inbox_report_empty" formatted="false">没有可读取的收件箱记录。可能确实没有记录，也可能被系统隐私/权限策略过滤。\n</string>
     <string name="inbox_report_footer" formatted="false">若测试的RCS/网络消息不在这里，不能据此读取其内容：它可能位于独立Provider，或受到系统过滤。\n结果不保存到执行日志、备份或logcat。</string>
     <string name="inbox_report_intro" formatted="false">查询：content://sms/inbox\n按时间倒序，最多20条，仅查看，不触发宏。\n\n</string>
-    <string name="keyword" formatted="false">包含关键词</string>
-    <string name="keyword_hint" formatted="false">留空则匹配该号码的所有消息。</string>
+    <string name="keyword" formatted="false">正文关键词</string>
+    <string name="keyword_hint" formatted="false">每行一个关键词，留空不限制正文；忽略空行及每行首尾空白，区分大小写，标点按原文匹配。</string>
     <string name="keyword_summary">包含  “%1$s”</string>
     <string name="list_separator" formatted="false">、</string>
     <string name="loading_backup" formatted="false">正在读取备份…</string>
@@ -286,4 +286,8 @@
     <string name="native_required_fields" formatted="false">请填写宏名称及发送号码</string>
     <string name="native_read_sms_error_hint" formatted="false">\n\n接收短信权限不等于读取短信权限；系统也可能限制第三方读取。请检查读取短信授权。</string>
     <string name="native_macro_count">%1$d 条自动化 · %2$d 条已启用</string>
+    <string name="keyword_mode" formatted="false">关键词匹配方式</string>
+    <string name="keyword_any" formatted="false">任意命中</string>
+    <string name="keyword_all" formatted="false">全部命中</string>
+    <string name="keyword_summary_multi">%1$s：%2$s</string>
 </resources>

@@ -68,7 +68,34 @@ final class Store {
                 && rule.optBoolean("enabled", true)
                 && !actual.isEmpty()
                 && numbers(rule).contains(actual)
-                && body.contains(rule.optString("keyword"));
+                && keywordsMatch(rule, body);
+    }
+
+    // Absence of keywordMode preserves legacy literal matching, including whitespace/newlines.
+    static boolean keywordsMatch(JSONObject rule, String body) {
+        if (body == null) return false;
+        String mode = rule.optString("keywordMode", "single");
+        String text = rule.optString("keyword");
+        if ("single".equals(mode)) return body.contains(text);
+        if (!("any".equals(mode) || "all".equals(mode))) return false;
+        LinkedHashSet<String> keywords = parseKeywords(text);
+        if (keywords.isEmpty()) return true;
+        boolean all = "all".equals(mode);
+        for (String keyword : keywords) {
+            boolean found = body.contains(keyword);
+            if (all && !found) return false;
+            if (!all && found) return true;
+        }
+        return all;
+    }
+
+    static LinkedHashSet<String> parseKeywords(String text) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        for (String line : text.split("[\\r\\n]+")) {
+            String keyword = line.trim();
+            if (!keyword.isEmpty()) result.add(keyword);
+        }
+        return result;
     }
 
     static LinkedHashSet<String> parseNames(String text) {
@@ -114,7 +141,7 @@ final class Store {
             if (aliases.contains(Normalizer.normalize(sender, Normalizer.Form.NFKC).trim())
                     || phones.contains(normalize(sender))) senderMatch = true;
         }
-        boolean keywordMatch = body.contains(rule.optString("keyword"));
+        boolean keywordMatch = keywordsMatch(rule, body);
         if (!senderMatch && !keywordMatch) return "SENDER_AND_KEYWORD_MISMATCH";
         if (!senderMatch) return "SENDER_MISMATCH";
         if (!keywordMatch) return "KEYWORD_MISMATCH";

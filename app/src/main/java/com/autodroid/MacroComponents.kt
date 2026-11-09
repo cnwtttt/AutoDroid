@@ -63,7 +63,15 @@ internal fun MacroCard(
             Text(
                 if (rule.optString("keyword").isEmpty())
                     activity.getString(R.string.match_any_content)
-                else activity.getString(R.string.keyword_summary, rule.optString("keyword")),
+                else
+                    activity.getString(
+                        R.string.keyword_summary_multi,
+                        activity.getString(
+                            if (rule.optString("keywordMode") == "all") R.string.keyword_all
+                            else R.string.keyword_any
+                        ),
+                        rule.optString("keyword").replace("\n", " / "),
+                    ),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Surface(

@@ -254,6 +254,30 @@ public class RuleMatchTest {
         check(Store.matches(migrated, "13800138000", "消息"), "combined macro remains usable as SMS");
         check(!noPhone.optBoolean("enabled", true), "name-only macro disabled");
         check(!Store.migrateToSms(upgrade), "SMS migration idempotent");
+        JSONObject words = new JSONObject().put("number", "13800138000").put("keyword", "报警\n断电");
+        check(!Store.matches(words, "13800138000", "报警，断电"), "legacy newline stays literal");
+        check(Store.matches(words, "13800138000", "报警\n断电"), "legacy multiline literal");
+        words.put("keywordMode", "any");
+        check(Store.matches(words, "13800138000", "设备报警"), "any first keyword");
+        check(Store.matches(words, "13800138000", "设备断电"), "any second keyword");
+        check(!Store.matches(words, "13800138000", "设备正常"), "any no keyword");
+        check(!Store.matches(words, "13900139000", "设备报警"), "keywords still require sender");
+        words.put("keywordMode", "all");
+        check(!Store.matches(words, "13800138000", "设备报警"), "all missing keyword");
+        check(Store.matches(words, "13800138000", "断电后发生报警"), "all ignores order");
+        words.put("keyword", " 报警 \r\n\n断电\n报警\n");
+        check(Store.matches(words, "13800138000", "断电报警"), "trim CRLF blanks and duplicates");
+        words.put("keyword", "\n  \r\n");
+        check(Store.matches(words, "13800138000", "正常"), "empty all unrestricted");
+        words.put("keywordMode", "any");
+        check(Store.matches(words, "13800138000", "正常"), "empty any unrestricted");
+        words.put("keyword", "Alarm\nA,B;C");
+        check(!Store.matches(words, "13800138000", "alarm"), "keywords case sensitive");
+        check(!Store.matches(words, "13800138000", "A"), "punctuation stays literal");
+        check(Store.matches(words, "13800138000", "A,B;C"), "literal punctuation keyword");
+        words.put("keywordMode", "invalid");
+        check(!Store.matches(words, "13800138000", "Alarm"), "invalid mode fails closed");
+        check(!Store.keywordsMatch(words, null), "null body fails closed");
         System.out.println("PASS: " + checks + " message matching checks");
     }
 }
